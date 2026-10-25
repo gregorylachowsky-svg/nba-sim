@@ -1,27 +1,34 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0c10"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="NBA Sim"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><style>body{margin:0}</style><title>Million Runs NBA Simulator</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a1410" media="(prefers-color-scheme: dark)"><meta name="theme-color" content="#eef3f0" media="(prefers-color-scheme: light)"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="NBA Sim"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><style>body{margin:0}</style><title>Million Runs NBA Simulator</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&display=swap">
 <style>
 /* Layout: one vertical broadcast column (like the video), scenes stacked top to bottom.
    Dark by choice: the subject is a night-game data broadcast. */
 :root {
-  --bg: #0a0c10;
-  --panel: #11141a;
-  --line: #232832;
-  --grid: #1b2029;
-  --ink: #e9ebef;
-  --ink2: #9ca4b2;
-  --muted: #667080;
-  --hi: #f2c230;
-  --away: #86c232;
-  --home: #ee4455;
-  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  color-scheme: dark;
+  --acc: #3ddc84; --acc-ink: #04210f;
+  --bg: color-mix(in srgb, var(--acc) 5%, #050706);
+  --panel: color-mix(in srgb, var(--acc) 8%, #0b0f0d);
+  --line: color-mix(in srgb, var(--acc) 16%, #151a18);
+  --chip: color-mix(in srgb, var(--acc) 14%, #101412);
+  --grid: color-mix(in srgb, var(--acc) 10%, #0e1311);
+  --ink: #e9f2ed; --ink2: #a9bdb1; --muted: #86a093;
+  --hi: var(--acc);
+  --away: #4aa8ff; --home: #ef8a2c; --on-team: #06120b;
+  --grad: linear-gradient(135deg, color-mix(in srgb, var(--acc) 70%, #fff), var(--acc));
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Barlow Condensed", "Arial Narrow", -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark light;
 }
-:root[data-cb="1"] { --away: #4ea3ff; --home: #ffa63a; }
+@media (prefers-color-scheme: light) {
+  :root {
+    --acc: #119c52; --acc-ink: #fff;
+    --bg: #eef3f0; --panel: #ffffff; --line: #dbe5e0; --chip: #e9f1ed; --grid: #e6eee9;
+    --ink: #13201a; --ink2: #44594e; --muted: #5a7066;
+    --away: #1f78c8; --home: #d9650f; --on-team: #ffffff;
+  }
+}
 * { box-sizing: border-box; }
 body {
   background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 1.45;
@@ -49,8 +56,8 @@ select:focus-visible, input:focus-visible, button:focus-visible, .filebtn:focus-
 button { cursor: pointer; font-weight: 600; }
 button:hover:not(:disabled), .filebtn:hover { border-color: var(--ink2); }
 button:disabled { opacity: .55; cursor: progress; }
-button.primary { background: var(--hi); color: #14110a; border-color: var(--hi); grid-column: 1 / -1; padding: 12px; font-size: 15px; }
-button.primary:hover:not(:disabled) { filter: brightness(1.08); border-color: var(--hi); }
+button.primary { background: var(--grad); color: var(--acc-ink); border-color: transparent; grid-column: 1 / -1; padding: 12px; font-size: 15px; }
+button.primary:hover:not(:disabled) { filter: brightness(1.06); border-color: transparent; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .row > * { flex: 0 0 auto; width: auto; }
 .filebtn { display: inline-flex; align-items: center; cursor: pointer; font-weight: 500; color: var(--ink2); }
@@ -112,7 +119,7 @@ th:first-child, td:first-child { text-align: left; }
 th { color: var(--muted); font-weight: 500; font-size: 10px; letter-spacing: .06em; border-bottom: 1px solid var(--line); }
 td.pts { color: var(--hi); font-weight: 600; }
 tr.total td { border-top: 1px solid var(--line); color: var(--ink2); }
-.winbar { display: flex; height: 30px; border-radius: 4px; overflow: hidden; font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: #0a0c10; }
+.winbar { display: flex; height: 30px; border-radius: 4px; overflow: hidden; font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--on-team); }
 .winbar > div { display: flex; align-items: center; padding: 0 8px; min-width: 0; }
 .winbar > div:last-child { justify-content: flex-end; }
 .legendline { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; color: var(--ink2); margin-top: 6px; gap: 10px; }
@@ -152,6 +159,58 @@ td.pick, th.pick { cursor: pointer; }
 tr.clickable { cursor: pointer; }
 tr.clickable:hover td { background: var(--line); }
 td.dim { color: var(--ink2); }
+
+/* Fantasy Edge look: rounded cards, mint accent, condensed numerals, light/dark with the phone */
+body { font-size: 15px; }
+h1, h2 { font-family: var(--font-mono); font-weight: 800; letter-spacing: .005em; }
+h1 { font-size: clamp(32px, 9vw, 44px); line-height: 1.02; text-transform: uppercase; }
+h2 { font-size: clamp(26px, 7vw, 32px); text-transform: uppercase; line-height: 1.05; }
+.label { font-size: 12px; letter-spacing: .1em; font-weight: 600; }
+select, input[type="number"], button, .filebtn { border-radius: 12px; padding: 10px 12px; font-size: 15px; }
+.card, .board, .gcard, .empty { border-radius: 16px; box-shadow: 0 6px 18px rgba(0,0,0,.16); }
+@media (prefers-color-scheme: light) { .card, .board, .gcard, .empty { box-shadow: 0 2px 10px rgba(19,32,26,.07); } }
+.empty { box-shadow: none; }
+.chip { border-radius: 99px; font-size: 14px; padding: 5px 11px; font-weight: 600; }
+.seg { background: var(--chip); border: 0; border-radius: 12px; padding: 3px; gap: 2px; }
+.seg button { border-radius: 9px; background: none; font-family: var(--font-mono); font-size: 15px; font-weight: 700; padding: 7px 12px; }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.daytabs button { border-radius: 99px; font-family: var(--font-mono); font-size: 15px; font-weight: 700; padding: 6px 14px; background: var(--chip); border-color: transparent; color: var(--ink2); }
+.daytabs button[aria-pressed="true"] { background: var(--acc); color: var(--acc-ink); }
+.tgl[aria-pressed="true"] { border-color: var(--acc); }
+.tabbar { border-top: 1px solid color-mix(in srgb, var(--acc) 28%, transparent); background: var(--panel); }
+.tabbar button { font-size: 12px; font-weight: 700; margin: 5px 4px; padding: 6px 0 5px; border-radius: 12px; }
+.tabbar button[aria-selected="true"] { color: var(--acc); background: color-mix(in srgb, var(--acc) 14%, transparent); }
+.gc-top { font-size: 13px; }
+.gc-row .nm { font-size: 19px; font-family: var(--font-mono); font-weight: 700; text-transform: uppercase; letter-spacing: .01em; }
+.gc-row .pj { font-size: 22px; font-family: var(--font-mono); font-weight: 600; }
+.gc-row .pc { font-size: 24px; font-family: var(--font-mono); font-weight: 700; }
+.gc-row .nm.away { color: var(--away); } .gc-row .nm.home { color: var(--home); }
+.gc-row.fav .pc { color: var(--acc); }
+.gc-foot { font-size: 14px; }
+.gcard .wp { height: 8px; border-radius: 4px; }
+.wp { border-radius: 4px; }
+.board .tm { font-family: var(--font-mono); font-size: 19px; font-weight: 700; text-transform: uppercase; }
+.board .sc { font-size: clamp(44px, 14vw, 64px); font-weight: 700; }
+.board .clock { font-size: 15px; font-weight: 600; }
+.wp-l { font-size: 12px; }
+.caption { font-size: 16px; font-family: var(--font-sans); }
+.stats-row { font-size: 17px; font-weight: 600; }
+.stats-row b { color: var(--acc); }
+.leaders { font-size: 16px; font-weight: 600; }
+table { font-size: 15px; }
+th { font-size: 12px; letter-spacing: .08em; }
+td.pts { color: var(--acc); font-weight: 700; }
+.bigline { font-family: var(--font-mono); font-size: clamp(38px, 11vw, 54px); font-weight: 800; text-transform: uppercase; }
+.winbar { border-radius: 8px; height: 34px; font-size: 15px; font-weight: 700; }
+.legendline { font-size: 14px; font-weight: 600; }
+.fine { font-size: 13px; }
+.propout { font-size: 18px; font-weight: 600; }
+.propout b { color: var(--acc); }
+.note, .status { font-size: 14px; }
+.status { font-family: var(--font-sans); }
+.courts figcaption { font-size: 13px; }
+h1 em, h2 em { color: var(--acc); }
+tr.clickable:hover td { background: var(--chip); }
 </style>
 
 <main>
@@ -167,7 +226,6 @@ td.dim { color: var(--ink2); }
     </div>
     <div class="row">
       <label class="filebtn"><input type="file" id="fileLeague" accept=".json,application/json">Load league.json</label>
-      <button class="tgl" id="btnCb" aria-pressed="false">Colorblind-safe colors</button>
     </div>
   </header>
  </div>
@@ -699,7 +757,7 @@ function drawReplay() {
     const onC = t === e.t ? e.lo : e.ld;
     for (const k of onC) { const cu = CUR[t][k]; if (!cu) continue; const x = G.px(cu[0]), y = G.py(cu[1]);
       c.beginPath(); c.arc(x, y, 8.5, 0, 6.2832); c.fillStyle = col[t]; c.globalAlpha = t === e.t ? .95 : .6; c.fill(); c.globalAlpha = 1;
-      c.fillStyle = '#0a0c10'; c.font = '600 8px ' + css('--font-mono'); c.textAlign = 'center'; c.fillText(nm(t, k).slice(0, 2).toUpperCase(), x, y + 3); }
+      c.fillStyle = css('--on-team'); c.font = '700 9px ' + css('--font-mono'); c.textAlign = 'center'; c.fillText(nm(t, k).slice(0, 2).toUpperCase(), x, y + 3); }
   }
 }
 function renderState() {
@@ -827,13 +885,13 @@ document.querySelectorAll('.seg [data-sp]').forEach(b => b.onclick = () => { S.s
 $('scrub').oninput = e => { if (!S.R) return; if (S.playing) stopPlay(); gotoEvent(+e.target.value, false); };
 document.querySelectorAll('#projTabs button').forEach(b => b.onclick = () => { S.projTeam = +b.dataset.t; document.querySelectorAll('#projTabs button').forEach(x => x.setAttribute('aria-pressed', x === b)); if (S.R) projTable(); });
 $('propPlayer').onchange = () => propUpdate(true); $('propStat').onchange = () => { propUpdate(true); if (S.R) propList(); }; $('propLine').oninput = () => propUpdate(false);
-$('btnCb').onclick = () => { const on = document.documentElement.dataset.cb !== '1'; if (on) document.documentElement.dataset.cb = '1'; else delete document.documentElement.dataset.cb; $('btnCb').setAttribute('aria-pressed', on); if (S.R) { S.dirty = true; if (S.tab === 'match') drawMatchVisuals(); } renderCards(); };
 $('fileLeague').onchange = e => {
   const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
   rd.onload = () => { try { const lg = JSON.parse(rd.result); if (!lg.players || !lg.teams) throw new Error('missing players or teams'); setLeague(lg, 'file'); S.sched = null; drawGames(); $('srcnote').textContent += ` Loaded ${Object.keys(lg.players).length} teams from your file.`; }
     catch (err) { $('srcnote').textContent = 'That file is not a league.json from fetch_data.py (' + err.message + ').'; } };
   rd.readAsText(f);
 };
+matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => { if (S.R) { S.dirty = true; if (S.tab === 'match') drawMatchVisuals(); } });
 window.addEventListener('resize', () => { if (S.R && S.tab === 'match') { drawScatter(1); courtG = null; } });
 /* ---------- schedule + local auto-load (works when served by run_app.py on this computer) ---------- */
 const etDate = d => new Date(d).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -872,7 +930,7 @@ function renderCards() {
     const b = document.createElement('button'); b.className = 'gcard' + (ok || done ? '' : ' pend'); b.id = 'g_' + g.id;
     const mg = ok ? L.hp - L.ap : 0, fav = mg >= 0 ? g.home : g.away, line = Math.round(Math.abs(mg) * 2) / 2;
     const foot = done ? 'Final · tap for the simulated game' : ok ? `${line < .25 ? 'Pick’em' : fav + ' −' + line.toFixed(1)} · total ${(Math.round((L.ap + L.hp) * 2) / 2).toFixed(1)}` : (L && L.err ? 'Tap to run the full simulation' : 'Simulating…');
-    const row = (side, ab, cls, pj, pc, favRow) => `<div class="gc-row${favRow ? ' fav' : ''}"><span class="nm ${cls}">${teamName(ab)}</span><span class="pj">${pj}</span><span class="pc">${pc}</span></div>`;
+    const row = (side, ab, cls, pj, pc, favRow) => `<div class="gc-row${favRow ? ' fav' : ''}"><span class="nm ${cls}">${nick(teamName(ab))}</span><span class="pj">${pj}</span><span class="pc">${pc}</span></div>`;
     b.innerHTML = `<div class="gc-top"><span>${g.away} @ ${g.home}</span><span>${gameTime(g)}</span></div>` +
       row(0, g.away, 'away', ok ? Math.round(L.ap) : (done ? g.away_score : '–'), ok ? Math.round(ap * 100) + '%' : '', ok && ap > hp) +
       row(1, g.home, 'home', ok ? Math.round(L.hp) : (done ? g.home_score : '–'), ok ? Math.round(hp * 100) + '%' : '', ok && hp >= ap) +
