@@ -1,17 +1,5 @@
 <!doctype html>
-<html lang="en">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a0c10">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="NBA Sim">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" href="icon-192.png">
-<style>body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
-<title>Million Runs NBA Simulator</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0c10"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="NBA Sim"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><style>body{margin:0}</style><title>Million Runs NBA Simulator</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
@@ -38,7 +26,7 @@
 body {
   background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 1.45;
   padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 20px 56px;
+  padding-block: 20px calc(88px + env(safe-area-inset-bottom, 0px));
 }
 main { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; }
 h1 { font-size: clamp(26px, 7vw, 36px); line-height: 1.1; font-weight: 700; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
@@ -133,26 +121,65 @@ tr.total td { border-top: 1px solid var(--line); color: var(--ink2); }
 .propout { font-family: var(--font-mono); font-size: 14px; line-height: 1.6; }
 .propout b { color: var(--hi); }
 @media (prefers-reduced-motion: reduce) { .wp > div { transition: none; } }
+
+/* app shell: bottom tab bar + views */
+.view[hidden] { display: none; }
+.view { display: flex; flex-direction: column; gap: 36px; }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--panel); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.tabin { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+.tabbar button { border: 0; background: none; border-radius: 0; width: auto; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 4px 8px; font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: .02em; }
+.tabbar button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.tabbar button[aria-selected="true"] { color: var(--hi); }
+.tabbar button:hover:not(:disabled) { border: 0; color: var(--ink); }
+.tabbar button[aria-selected="true"]:hover:not(:disabled) { color: var(--hi); }
+.tabbar button:focus-visible { outline-offset: -3px; }
+.gcards { display: flex; flex-direction: column; gap: 10px; }
+.gcard { text-align: left; padding: 12px 14px 13px; display: flex; flex-direction: column; gap: 9px; font-weight: 400; border-radius: 8px; }
+.gcard:hover { border-color: var(--ink2); }
+.gc-top { display: flex; justify-content: space-between; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.gc-row { display: grid; grid-template-columns: 1fr auto 3.6em; gap: 12px; align-items: baseline; }
+.gc-row .nm { font-weight: 600; font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gc-row .pj { font-family: var(--font-mono); font-size: 15px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.gc-row .pc { font-family: var(--font-mono); font-size: 16px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink2); }
+.gc-row.fav .pc { color: var(--hi); }
+.gc-foot { font-family: var(--font-mono); font-size: 11px; color: var(--ink2); min-height: 15px; }
+.gcard .wp { height: 6px; }
+.gcard.pend .wp > div { background: var(--line) !important; }
+.empty[hidden] { display: none; }
+.empty { border: 1px dashed var(--line); border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.empty button { width: auto; padding: 9px 14px; }
+td.pick, th.pick { cursor: pointer; }
+tr.clickable { cursor: pointer; }
+tr.clickable:hover td { background: var(--line); }
+td.dim { color: var(--ink2); }
 </style>
 
 <main>
+ <div class="view" id="v-games">
   <header class="scene">
-    <h1 id="headline">We simulated tonight's <em>a game 10,000 times.</em></h1>
+    <h1 id="gamesTitle">Tonight's games, <em>simulated.</em></h1>
     <p class="note" id="srcnote"></p>
-    <div class="controls">
-      <div class="field" style="grid-column:1/-1" id="gamesWrap" hidden>
-        <span class="label">Pick a game</span>
-        <div class="daytabs" id="dayTabs" role="group" aria-label="Game day"></div>
-        <div class="games" id="gameList"></div>
-      </div>
-      <div class="field"><label class="label" for="selAway">Away</label><select id="selAway"></select></div>
-      <div class="field"><label class="label" for="selHome">Home</label><select id="selHome"></select></div>
-      <div class="field" style="grid-column:1/-1"><span class="label">Or pick any two teams · click a player to mark him out</span><div class="chips" id="chips"></div></div>
-      <button class="primary" id="btnRun">Run 10,000 simulations</button>
+    <div class="daytabs" id="dayTabs" role="group" aria-label="Game day"></div>
+    <div class="gcards" id="gameList"></div>
+    <div class="empty" id="noSched" hidden>
+      <p class="note" style="margin:0">No game schedule is loaded, so pick any two teams yourself.</p>
+      <button id="btnToMatch">Open matchup builder</button>
     </div>
     <div class="row">
       <label class="filebtn"><input type="file" id="fileLeague" accept=".json,application/json">Load league.json</label>
       <button class="tgl" id="btnCb" aria-pressed="false">Colorblind-safe colors</button>
+    </div>
+  </header>
+ </div>
+
+ <div class="view" id="v-match" hidden>
+  <header class="scene">
+    <h1 id="headline">We simulated tonight's <em>a game 10,000 times.</em></h1>
+    <div class="controls">
+      <div class="field"><label class="label" for="selAway">Away</label><select id="selAway"></select></div>
+      <div class="field"><label class="label" for="selHome">Home</label><select id="selHome"></select></div>
+      <div class="field" style="grid-column:1/-1"><span class="label">Tap a player to mark him out</span><div class="chips" id="chips"></div></div>
+      <button class="primary" id="btnRun">Run 10,000 simulations</button>
     </div>
     <div class="status" id="status" role="status"></div>
   </header>
@@ -195,9 +222,10 @@ tr.total td { border-top: 1px solid var(--line); color: var(--ink2); }
   </section>
 
   <section class="scene" aria-labelledby="s4">
-    <span class="label" id="s4">Final box score · the typical game</span>
+    <span class="label" id="s4">Box score · one typical simulated game</span>
     <div class="tablewrap" id="boxA"></div>
     <div class="tablewrap" id="boxH"></div>
+    <p class="fine">This is one simulated game chosen to look ordinary: near the median score and margin, with the top scorers near their averages. Real averages and ranges are on the Players tab.</p>
     <div class="card" style="display:flex;flex-direction:column;gap:10px">
       <span class="label">The most typical game</span>
       <p class="bigline" id="typical">—</p>
@@ -207,13 +235,28 @@ tr.total td { border-top: 1px solid var(--line); color: var(--ink2); }
       <span class="mono" id="medline" style="font-size:12px;color:var(--ink2)"></span>
     </div>
   </section>
+ </div>
 
-  <section class="scene" aria-labelledby="s5">
-    <h2 id="s5">Player <em>projections.</em></h2>
+ <div class="view" id="v-players" hidden>
+  <section class="scene">
+    <h2>Top projected <em>performers.</em></h2>
+    <p class="note" id="topNote"></p>
+    <div class="seg" role="group" aria-label="Stat" id="topStat"><button data-s="pts" aria-pressed="true">PTS</button><button data-s="reb" aria-pressed="false">REB</button><button data-s="ast" aria-pressed="false">AST</button><button data-s="tpm" aria-pressed="false">3PM</button></div>
+    <div class="tablewrap" id="topTable"></div>
+  </section>
+  <section class="scene" id="projSec">
+    <h2 id="s5">Full <em>projections.</em></h2>
+    <p class="note" id="projNote"></p>
     <div class="seg" role="group" aria-label="Team" id="projTabs"><button data-t="0" aria-pressed="true">Away</button><button data-t="1" aria-pressed="false">Home</button></div>
     <div class="tablewrap" id="projTable"></div>
+  </section>
+ </div>
+
+ <div class="view" id="v-props" hidden>
+  <section class="scene">
+    <h2>Prop <em>check.</em></h2>
+    <p class="note" id="propNote"></p>
     <div class="card" style="display:flex;flex-direction:column;gap:10px">
-      <span class="label">Prop check</span>
       <div class="proprow">
         <div class="field"><label class="label" for="propPlayer">Player</label><select id="propPlayer"></select></div>
         <div class="field"><label class="label" for="propStat">Stat</label>
@@ -222,9 +265,19 @@ tr.total td { border-top: 1px solid var(--line); color: var(--ink2); }
       </div>
       <div class="propout" id="propOut"></div>
     </div>
+    <span class="label" id="propListLabel">Every player · tap a row to check it</span>
+    <div class="tablewrap" id="propList"></div>
     <p class="fine" id="foot"></p>
   </section>
+ </div>
 </main>
+
+<nav class="tabbar" aria-label="Sections"><div class="tabin" role="tablist">
+  <button role="tab" data-tab="games" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="16" rx="2"/><path d="M3.5 9.5h17M8 2.8v3.4M16 2.8v3.4"/></svg><span>Games</span></button>
+  <button role="tab" data-tab="match" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.8" y="5.5" width="18.4" height="13" rx="1.5"/><path d="M12 5.5v13"/><circle cx="12" cy="12" r="2.6"/></svg><span>Matchup</span></button>
+  <button role="tab" data-tab="players" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20c.8-3.8 3.7-5.8 7.2-5.8s6.4 2 7.2 5.8"/></svg><span>Players</span></button>
+  <button role="tab" data-tab="props" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M21 19H3"/><path d="M2.5 13.5h19" stroke-dasharray="2 2.4"/></svg><span>Props</span></button>
+</div></nav>
 
 <script>
 const DEMO_LEAGUE = {"season":"demo","teams":{"TID":{"name":"Coastal Tide","pace":99.0,"off_rtg":115,"def_rtg":115},"SPK":{"name":"Desert Sparks","pace":99.0,"off_rtg":115,"def_rtg":115}},"players":{"TID":[{"id":0,"name":"Marcus Hale","mpg":35,"gp_cur":70,"tot":{"GP":70,"MIN":2450,"FGM":593.72,"FGA":1257.88,"FG3M":186.17,"FG3A":503.15,"FTM":356.4,"FTA":419.29,"OREB":41.93,"DREB":269.55,"AST":419.29,"TOV":209.65,"STL":71.88,"BLK":23.96,"PF":0,"PTS":1730.0}},{"id":1,"name":"Dre Whitfield","mpg":33,"gp_cur":70,"tot":{"GP":70,"MIN":2310,"FGM":458.73,"FGA":960.09,"FG3M":131.34,"FG3A":364.84,"FTM":203.31,"FTA":254.14,"OREB":56.48,"DREB":310.62,"AST":169.43,"TOV":112.95,"STL":62.12,"BLK":28.24,"PF":0,"PTS":1252.12}},{"id":2,"name":"Tomas Berg","mpg":31,"gp_cur":70,"tot":{"GP":70,"MIN":2170,"FGM":448.62,"FGA":742.75,"FG3M":11.14,"FG3A":37.14,"FTM":185.69,"FTA":265.27,"OREB":185.69,"DREB":450.95,"AST":132.63,"TOV":132.63,"STL":42.44,"BLK":106.11,"PF":0,"PTS":1094.07}},{"id":3,"name":"Elijah Ward","mpg":30,"gp_cur":70,"tot":{"GP":70,"MIN":2100,"FGM":299.02,"FGA":667.45,"FG3M":108.13,"FG3A":300.35,"FTM":100.12,"FTA":128.35,"OREB":61.61,"DREB":308.05,"AST":128.35,"TOV":77.01,"STL":51.34,"BLK":41.07,"PF":0,"PTS":806.27}},{"id":4,"name":"Jonah Ruiz","mpg":28,"gp_cur":70,"tot":{"GP":70,"MIN":1960,"FGM":291.83,"FGA":670.87,"FG3M":124.11,"FG3A":335.43,"FTM":117.88,"FTA":143.76,"OREB":28.75,"DREB":167.72,"AST":239.6,"TOV":105.42,"STL":62.29,"BLK":14.38,"PF":0,"PTS":825.65}},{"id":5,"name":"Cal Nakamura","mpg":24,"gp_cur":70,"tot":{"GP":70,"MIN":1680,"FGM":266.46,"FGA":616.1,"FG3M":97.04,"FG3A":277.25,"FTM":98.58,"FTA":123.22,"OREB":32.86,"DREB":164.29,"AST":123.22,"TOV":82.15,"STL":41.07,"BLK":16.43,"PF":0,"PTS":728.54}},{"id":6,"name":"Boyd Okafor","mpg":20,"gp_cur":70,"tot":{"GP":70,"MIN":1400,"FGM":214.61,"FGA":376.51,"FG3M":11.3,"FG3A":37.65,"FTM":81.46,"FTA":119.8,"OREB":130.07,"DREB":273.82,"AST":51.34,"TOV":75.3,"STL":27.38,"BLK":54.76,"PF":0,"PTS":521.98}},{"id":7,"name":"Rey Santoro","mpg":18,"gp_cur":70,"tot":{"GP":70,"MIN":1260,"FGM":156.37,"FGA":369.66,"FG3M":73.19,"FG3A":203.31,"FTM":48.06,"FTA":61.61,"OREB":24.64,"DREB":138.62,"AST":61.61,"TOV":46.21,"STL":30.81,"BLK":15.4,"PF":0,"PTS":433.98}},{"id":8,"name":"Theo Vance","mpg":14,"gp_cur":70,"tot":{"GP":70,"MIN":980,"FGM":117.88,"FGA":287.51,"FG3M":48.88,"FG3A":143.76,"FTM":37.38,"FTA":47.92,"OREB":11.98,"DREB":71.88,"AST":95.84,"TOV":47.92,"STL":23.96,"BLK":4.79,"PF":0,"PTS":322.02}},{"id":9,"name":"Gil Moreau","mpg":9,"gp_cur":70,"tot":{"GP":70,"MIN":630,"FGM":79.85,"FGA":184.83,"FG3M":24.4,"FG3A":73.93,"FTM":28.88,"FTA":38.51,"OREB":23.1,"DREB":77.01,"AST":30.81,"TOV":33.89,"STL":13.86,"BLK":9.24,"PF":0,"PTS":212.97}}],"SPK":[{"id":0,"name":"Isaiah Cross","mpg":36,"gp_cur":70,"tot":{"GP":70,"MIN":2520,"FGM":676.98,"FGA":1380.17,"FG3M":183.56,"FG3A":483.06,"FTM":421.58,"FTA":501.88,"OREB":50.19,"DREB":376.41,"AST":345.04,"TOV":238.39,"STL":81.56,"BLK":50.19,"PF":0,"PTS":1959.1}},{"id":1,"name":"Dante Lowry","mpg":33,"gp_cur":70,"tot":{"GP":70,"MIN":2310,"FGM":354.24,"FGA":805.1,"FG3M":152.97,"FG3A":402.55,"FTM":173.1,"FTA":201.28,"OREB":28.75,"DREB":201.28,"AST":488.81,"TOV":161.02,"STL":80.51,"BLK":17.25,"PF":0,"PTS":1034.56}},{"id":2,"name":"Viktor Pell","mpg":30,"gp_cur":70,"tot":{"GP":70,"MIN":2100,"FGM":544.37,"FGA":836.47,"FG3M":3.35,"FG3A":16.73,"FTM":189.77,"FTA":287.54,"OREB":198.66,"DREB":470.51,"AST":156.84,"TOV":146.38,"STL":41.82,"BLK":115.01,"PF":0,"PTS":1281.87}},{"id":3,"name":"Kenji Mora","mpg":29,"gp_cur":70,"tot":{"GP":70,"MIN":2030,"FGM":234.59,"FGA":555.9,"FG3M":137.31,"FG3A":361.34,"FTM":80.86,"FTA":101.07,"OREB":35.38,"DREB":227.42,"AST":101.07,"TOV":65.7,"STL":70.75,"BLK":30.32,"PF":0,"PTS":687.35}},{"id":4,"name":"Amari Boyce","mpg":27,"gp_cur":70,"tot":{"GP":70,"MIN":1890,"FGM":316.19,"FGA":658.72,"FG3M":67.19,"FG3A":197.62,"FTM":121.86,"FTA":164.68,"OREB":84.69,"DREB":329.36,"AST":141.15,"TOV":103.51,"STL":42.35,"BLK":47.05,"PF":0,"PTS":821.42}},{"id":5,"name":"Silas Trent","mpg":25,"gp_cur":70,"tot":{"GP":70,"MIN":1750,"FGM":300.78,"FGA":697.06,"FG3M":112.92,"FG3A":313.68,"FTM":108.48,"FTA":130.7,"OREB":21.78,"DREB":139.41,"AST":174.26,"TOV":100.2,"STL":43.57,"BLK":8.71,"PF":0,"PTS":822.96}},{"id":6,"name":"Wade Okoro","mpg":18,"gp_cur":70,"tot":{"GP":70,"MIN":1260,"FGM":198.19,"FGA":345.04,"FG3M":7.73,"FG3A":27.6,"FTM":65.87,"FTA":94.1,"OREB":109.79,"DREB":235.26,"AST":56.46,"TOV":62.74,"STL":25.09,"BLK":50.19,"PF":0,"PTS":469.99}},{"id":7,"name":"Luca Brandt","mpg":17,"gp_cur":70,"tot":{"GP":70,"MIN":1190,"FGM":149.31,"FGA":355.5,"FG3M":62.21,"FG3A":177.75,"FTM":46.21,"FTA":59.25,"OREB":29.62,"DREB":133.31,"AST":65.17,"TOV":47.4,"STL":29.62,"BLK":14.81,"PF":0,"PTS":407.05}},{"id":8,"name":"Nate Ibarra","mpg":12,"gp_cur":70,"tot":{"GP":70,"MIN":840,"FGM":102.89,"FGA":250.94,"FG3M":42.66,"FG3A":125.47,"FTM":32.62,"FTA":41.82,"OREB":10.46,"DREB":62.74,"AST":79.46,"TOV":41.82,"STL":20.91,"BLK":4.18,"PF":0,"PTS":281.05}},{"id":9,"name":"Owen Dray","mpg":8,"gp_cur":70,"tot":{"GP":70,"MIN":560,"FGM":72.27,"FGA":167.29,"FG3M":22.08,"FG3A":66.92,"FTM":26.14,"FTA":34.85,"OREB":20.91,"DREB":69.71,"AST":27.88,"TOV":30.67,"STL":12.55,"BLK":8.36,"PF":0,"PTS":192.76}}]}};
@@ -278,8 +331,8 @@ function sampleLineup(rand, logw, noise, out, off) {
   let used = 0;
   for (let j = 0; j < 5; j++) { let b = -1, bv = -Infinity; for (let i = 0; i < K; i++) if (!(used >> i & 1) && _sc[i] > bv) { bv = _sc[i]; b = i; } out[off + j] = b; used |= 1 << b; }
 }
-function calibrateMinutes(t, rand, minSd) {
-  const n = 1500, segs = 12, out = new Int8Array(5), noise = new Float64Array(K);
+function calibrateMinutes(t, rand, minSd, nn) {
+  const n = nn || 1500, segs = 12, out = new Int8Array(5), noise = new Float64Array(K);
   for (let it = 0; it < 8; it++) {
     const cnt = new Float64Array(K);
     for (let g = 0; g < n; g++) { for (let i = 0; i < K; i++) noise[i] = minSd * randn(rand); for (let s = 0; s < segs; s++) { sampleLineup(rand, t.logw, noise, out, 0); for (let j = 0; j < 5; j++) cnt[out[j]]++; } }
@@ -412,13 +465,13 @@ function runBatch(T, prm, cfg, seed0, start, count, agg) {
   }
 }
 const tick = () => new Promise(r => setTimeout(r, 0));
-async function prepare(T, cfg, onProg) {
+async function prepare(T, cfg, onProg, lite) {
   const rand = mulberry32(cfg.seed);
-  T.forEach(t => { ROLE.forEach(k => t[k] = t.base[k].slice()); setMinutes(t); calibrateMinutes(t, rand, cfg.minSd); });
+  T.forEach(t => { ROLE.forEach(k => t[k] = t.base[k].slice()); setMinutes(t); calibrateMinutes(t, rand, cfg.minSd, lite ? 500 : 1500); });
   const prm = teamParams(T, cfg.defEl);
-  for (let it = 0; it < 4; it++) {
+  for (let it = 0; it < (lite ? 3 : 4); it++) {
     T.forEach(refreshG);
-    const n = 1500, agg = newAgg(n, false);
+    const n = lite ? 600 : 1500, agg = newAgg(n, false);
     for (let s = 0; s < n; s += 300) { runBatch(T, prm, cfg, 9000000 + it * 100000, s, 300, agg); onProg && onProg((it + s / n) / 4 * .35); await tick(); }
     for (let ti = 0; ti < 2; ti++) {
       const t = T[ti], S = agg.sums[ti];
@@ -446,8 +499,20 @@ function pickTypical(R) {
   const med = a => { const b = Float64Array.from(a).sort(); return b[b.length >> 1]; };
   const sd = a => { let s = 0, q = 0; for (const v of a) { s += v; q += v * v; } const mu = s / a.length; return Math.sqrt(Math.max(q / a.length - mu * mu, 1e-9)); };
   const mm = med(m), mt = med(tot), sm = sd(m), st = sd(tot);
+  // also keep each team's top scorers close to their own averages, so the sample box score looks ordinary
+  const stars = [];
+  for (let t = 0; t < 2; t++) {
+    const mu = [], idx = [];
+    for (let k = 0; k < K; k++) { let a = 0, q = 0; for (let g = 0; g < N; g++) { const v = agg.pr[t][(g * K + k) * 4]; a += v; q += v * v; } a /= N; mu.push([a, Math.sqrt(Math.max(q / N - a * a, 1))]); idx.push(k); }
+    idx.sort((x, y) => mu[y][0] - mu[x][0]);
+    idx.slice(0, 5).forEach(k => stars.push([t, k, mu[k][0], mu[k][1]]));
+  }
   let best = 0, bd = 1e18;
-  for (let g = 0; g < N; g++) { const d = ((m[g] - mm) / sm) ** 2 + ((tot[g] - mt) / st) ** 2 + (agg.ot[g] ? 4 : 0); if (d < bd) { bd = d; best = g; } }
+  for (let g = 0; g < N; g++) {
+    let d = ((m[g] - mm) / sm) ** 2 + ((tot[g] - mt) / st) ** 2 + (agg.ot[g] ? 4 : 0);
+    for (const [t, k, a, sd] of stars) d += .6 * ((agg.pr[t][(g * K + k) * 4] - a) / sd) ** 2;
+    if (d < bd) { bd = d; best = g; }
+  }
   return { g: best, medMargin: mm, medTotal: mt, sdMargin: sm, sdTotal: st };
 }
 
@@ -456,7 +521,7 @@ function pickTypical(R) {
    ==================================================================== */
 const $ = id => document.getElementById(id);
 const CFG = { seed: 2101, pace: 99, paceSd: 4, formSd: .015, minSd: .18, homeEdge: .01, comeback: .0025, defEl: 1.0 };
-const S = { league: null, src: 'demo', away: null, home: null, out: new Set(), R: null, typ: null, events: [], idx: 0, playing: false, speed: 1, timer: null, projTeam: 0, running: false };
+const S = { league: null, src: 'demo', away: null, home: null, out: new Set(), R: null, typ: null, events: [], idx: 0, playing: false, speed: 1, timer: null, projTeam: 0, running: false, tab: 'games', lite: {}, topStat: 'pts', list: [] };
 
 const SUFFIX = /^(jr\.?|sr\.?|ii|iii|iv|v)$/i;
 function lastName(n) { const p = n.split(' ').filter(x => !SUFFIX.test(x)); return p[p.length - 1] || n; }
@@ -466,7 +531,7 @@ const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).
 function fitCanvas(cv, cssW, cssH) { const r = Math.min(window.devicePixelRatio || 1, 2); cv.width = Math.round(cssW * r); cv.height = Math.round(cssH * r); const c = cv.getContext('2d'); c.setTransform(r, 0, 0, r, 0, 0); return c; }
 
 function setLeague(lg, src) {
-  S.league = lg; S.src = src; S.out = new Set();
+  S.league = lg; S.src = src; S.out = new Set(); S.lite = {}; S.R = null;
   const abbrs = Object.keys(lg.players).filter(a => lg.players[a].length >= 6).sort((a, b) => (lg.teams[a]?.name || a).localeCompare(lg.teams[b]?.name || b));
   for (const sel of [$('selAway'), $('selHome')]) sel.innerHTML = abbrs.map(a => `<option value="${a}">${(lg.teams[a]?.name || a)}</option>`).join('');
   $('selAway').value = abbrs[0]; $('selHome').value = abbrs[1] || abbrs[0];
@@ -496,6 +561,7 @@ function drawChips() {
 /* ---------- scatter ---------- */
 function drawScatter(frac) {
   const cv = $('cvScatter'), W = cv.parentElement.clientWidth - 24, H = W;
+  if (W < 60) return;
   const c = fitCanvas(cv, W, H), R = S.R;
   c.clearRect(0, 0, W, H);
   const pad = { l: 38, r: 10, t: 12, b: 34 }, pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
@@ -545,7 +611,8 @@ function drawCourt(c, G) {
   line(arcPts(0, 47, 6, 1.5708, 4.7124));
 }
 function drawShotCourt(cv, team, ti, label) {
-  const W = cv.parentElement.clientWidth, G = courtGeom(cv, W), c = fitCanvas(cv, W, G.h);
+  const W = cv.parentElement.clientWidth; if (W < 60) return;
+  const G = courtGeom(cv, W), c = fitCanvas(cv, W, G.h);
   drawCourt(c, G);
   // top scorer by expected points
   let bi = 0, bv = -1; for (let i = 0; i < team.n; i++) { const v = team.use[i] * team.mpg[i]; if (v > bv) { bv = v; bi = i; } }
@@ -621,6 +688,7 @@ function setTargets(e, idx) {
 let courtG = null, rcx = null;
 function drawReplay() {
   const cv = $('cvReplay'), W = cv.parentElement.clientWidth - 24;
+  if (W < 60) return;
   if (!courtG || courtG.w !== W || !rcx) { courtG = courtGeom(cv, W); rcx = fitCanvas(cv, W, courtG.h); }
   const c = rcx, G = courtG; drawCourt(c, G);
   const e = S.events[S.idx]; if (!e) return;
@@ -665,7 +733,7 @@ function stepPlay() {
   const e = S.events[S.idx], base = e.type === 'Q' ? 700 : e.type === 'END' ? 0 : 330;
   S.timer = setTimeout(stepPlay, base / S.speed);
 }
-(function loop() { if (S.R && $('cvReplay')) drawReplay(); requestAnimationFrame(loop); })();
+(function loop() { if (S.R && S.tab === 'match') drawReplay(); requestAnimationFrame(loop); })();
 
 /* ---------- tables ---------- */
 function boxTable(ti, host) {
@@ -726,8 +794,7 @@ async function run() {
     // make the END state show the true final (including OT)
     S.events[S.events.length - 1].pts = S.final.pts.slice();
     $('scrub').max = S.events.length - 1;
-    updateWinCounts(); animateScatter();
-    drawShotCourt($('cvCourtA'), T[0], 0, $('capA')); drawShotCourt($('cvCourtH'), T[1], 1, $('capH'));
+    updateWinCounts(); drawMatchVisuals();
     $('bAway').textContent = T[0].name; $('bHome').textContent = T[1].name;
     gotoEvent(S.events.length - 1, false);
     boxTable(0, $('boxA')); boxTable(1, $('boxH'));
@@ -738,7 +805,7 @@ async function run() {
     $('wlA').innerHTML = `<span class="away">${nick(T[0].name)} ${Math.round(aw / R.N * 100)}%</span>`; $('wlH').innerHTML = `<span class="home">${nick(T[1].name)} ${Math.round(hw / R.N * 100)}%</span>`;
     const mm = S.typ.medMargin; $('medline').textContent = `median margin: ${mm === 0 ? 'even' : nick(T[mm > 0 ? 1 : 0].name) + ' by ' + Math.abs(mm)} · avg score ${T[0].abbr} ${(avg(R.agg.ap)).toFixed(1)}, ${T[1].abbr} ${(avg(R.agg.hp)).toFixed(1)}`;
     $('projTabs').children[0].textContent = T[0].name; $('projTabs').children[1].textContent = T[1].name;
-    projTable(); fillPropPlayers();
+    projTable(); fillPropPlayers(); storeLite(R); renderCards(); renderTop(); renderPropsHead();
     $('foot').textContent = `Players: ${S.src === 'demo' ? 'invented demo players' : (S.league.season || '') + ' season stats blended with last season'}. 10,000 runs, seed ${CFG.seed}. Simulated, not a prediction.`;
     st.textContent = `Done · ${fmt(R.N)} games simulated.`;
   } catch (err) { st.textContent = err.message || String(err); console.error(err); }
@@ -759,15 +826,15 @@ $('btnPlay').onclick = () => {
 document.querySelectorAll('.seg [data-sp]').forEach(b => b.onclick = () => { S.speed = +b.dataset.sp; document.querySelectorAll('.seg [data-sp]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
 $('scrub').oninput = e => { if (!S.R) return; if (S.playing) stopPlay(); gotoEvent(+e.target.value, false); };
 document.querySelectorAll('#projTabs button').forEach(b => b.onclick = () => { S.projTeam = +b.dataset.t; document.querySelectorAll('#projTabs button').forEach(x => x.setAttribute('aria-pressed', x === b)); if (S.R) projTable(); });
-$('propPlayer').onchange = () => propUpdate(true); $('propStat').onchange = () => propUpdate(true); $('propLine').oninput = () => propUpdate(false);
-$('btnCb').onclick = () => { const on = document.documentElement.dataset.cb !== '1'; if (on) document.documentElement.dataset.cb = '1'; else delete document.documentElement.dataset.cb; $('btnCb').setAttribute('aria-pressed', on); if (S.R) { drawScatter(1); drawShotCourt($('cvCourtA'), S.R.T[0], 0, $('capA')); drawShotCourt($('cvCourtH'), S.R.T[1], 1, $('capH')); } };
+$('propPlayer').onchange = () => propUpdate(true); $('propStat').onchange = () => { propUpdate(true); if (S.R) propList(); }; $('propLine').oninput = () => propUpdate(false);
+$('btnCb').onclick = () => { const on = document.documentElement.dataset.cb !== '1'; if (on) document.documentElement.dataset.cb = '1'; else delete document.documentElement.dataset.cb; $('btnCb').setAttribute('aria-pressed', on); if (S.R) { S.dirty = true; if (S.tab === 'match') drawMatchVisuals(); } renderCards(); };
 $('fileLeague').onchange = e => {
   const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
-  rd.onload = () => { try { const lg = JSON.parse(rd.result); if (!lg.players || !lg.teams) throw new Error('missing players or teams'); setLeague(lg, 'file'); S.sched = null; drawGames(); $('status').textContent = `Loaded ${Object.keys(lg.players).length} teams. Pick two and run.`; }
-    catch (err) { $('status').textContent = 'That file is not a league.json from fetch_data.py (' + err.message + ').'; } };
+  rd.onload = () => { try { const lg = JSON.parse(rd.result); if (!lg.players || !lg.teams) throw new Error('missing players or teams'); setLeague(lg, 'file'); S.sched = null; drawGames(); $('srcnote').textContent += ` Loaded ${Object.keys(lg.players).length} teams from your file.`; }
+    catch (err) { $('srcnote').textContent = 'That file is not a league.json from fetch_data.py (' + err.message + ').'; } };
   rd.readAsText(f);
 };
-window.addEventListener('resize', () => { if (S.R) { drawScatter(1); courtG = null; } });
+window.addEventListener('resize', () => { if (S.R && S.tab === 'match') { drawScatter(1); courtG = null; } });
 /* ---------- schedule + local auto-load (works when served by run_app.py on this computer) ---------- */
 const etDate = d => new Date(d).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 function dayLabel(d) {
@@ -780,25 +847,135 @@ function gameTime(g) {
   if (g.status === 2) return `Live ${g.away_score}-${g.home_score}`;
   return g.utc ? new Date(g.utc).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : (g.text || '');
 }
+const gkey = g => g.away + '@' + g.home;
 function drawGames() {
-  const sc = S.sched, lg = S.league; S.firstGame = null;
-  if (!sc || !sc.games || !lg) { $('gamesWrap').hidden = true; return; }
-  const today = etDate(Date.now()), games = sc.games.filter(g => lg.players[g.away] && lg.players[g.home] && g.date >= today);
+  const sc = S.sched, lg = S.league; S.firstGame = null; S.list = [];
+  const ok = sc && sc.games && lg;
+  const today = etDate(Date.now()), games = ok ? sc.games.filter(g => lg.players[g.away] && lg.players[g.home] && g.date >= today) : [];
   const days = [...new Set(games.map(g => g.date))].sort().slice(0, 10);
-  if (!days.length) { $('gamesWrap').hidden = true; return; }
+  $('noSched').hidden = days.length > 0; $('dayTabs').hidden = !days.length;
+  if (!days.length) { $('gameList').innerHTML = ''; return; }
   if (!days.includes(S.day)) S.day = days[0];
-  $('gamesWrap').hidden = false;
   $('dayTabs').innerHTML = ''; days.forEach(d => { const b = document.createElement('button'); b.textContent = dayLabel(d); b.setAttribute('aria-pressed', d === S.day); b.onclick = () => { S.day = d; drawGames(); }; $('dayTabs').appendChild(b); });
-  const list = games.filter(g => g.date === S.day); $('gameList').innerHTML = '';
-  S.firstGame = list.find(g => g.status !== 3) || list[0];
-  list.forEach(g => { const b = document.createElement('button'); b.className = 'game'; b.id = 'g_' + g.id;
-    b.setAttribute('aria-pressed', S.gameId === g.id);
-    b.innerHTML = `${g.away} @ ${g.home}<small>${gameTime(g)}</small>`; b.onclick = () => pickGame(g); $('gameList').appendChild(b); });
+  S.list = games.filter(g => g.date === S.day);
+  S.firstGame = S.list.find(g => g.status !== 3) || S.list[0];
+  $('gamesTitle').innerHTML = S.day === today ? `Tonight's games, <em>simulated.</em>` : `${dayLabel(S.day)}'s games, <em>simulated.</em>`;
+  renderCards(); runLiteQueue();
+}
+const teamName = ab => S.league.teams[ab]?.name || ab;
+function renderCards() {
+  const host = $('gameList'); if (!S.list.length) return;
+  host.innerHTML = '';
+  S.list.forEach(g => {
+    const L = S.lite[gkey(g)], done = g.status === 3, ok = L && !L.err;
+    const hp = ok ? L.hw : .5, ap = 1 - hp;
+    const b = document.createElement('button'); b.className = 'gcard' + (ok || done ? '' : ' pend'); b.id = 'g_' + g.id;
+    const mg = ok ? L.hp - L.ap : 0, fav = mg >= 0 ? g.home : g.away, line = Math.round(Math.abs(mg) * 2) / 2;
+    const foot = done ? 'Final · tap for the simulated game' : ok ? `${line < .25 ? 'Pick’em' : fav + ' −' + line.toFixed(1)} · total ${(Math.round((L.ap + L.hp) * 2) / 2).toFixed(1)}` : (L && L.err ? 'Tap to run the full simulation' : 'Simulating…');
+    const row = (side, ab, cls, pj, pc, favRow) => `<div class="gc-row${favRow ? ' fav' : ''}"><span class="nm ${cls}">${teamName(ab)}</span><span class="pj">${pj}</span><span class="pc">${pc}</span></div>`;
+    b.innerHTML = `<div class="gc-top"><span>${g.away} @ ${g.home}</span><span>${gameTime(g)}</span></div>` +
+      row(0, g.away, 'away', ok ? Math.round(L.ap) : (done ? g.away_score : '–'), ok ? Math.round(ap * 100) + '%' : '', ok && ap > hp) +
+      row(1, g.home, 'home', ok ? Math.round(L.hp) : (done ? g.home_score : '–'), ok ? Math.round(hp * 100) + '%' : '', ok && hp >= ap) +
+      (done ? '' : `<div class="wp"><div style="width:${(ap * 100).toFixed(1)}%;background:var(--away)"></div><div style="width:${(hp * 100).toFixed(1)}%;background:var(--home)"></div></div>`) +
+      `<div class="gc-foot">${foot}</div>`;
+    b.setAttribute('aria-label', `${teamName(g.away)} at ${teamName(g.home)}. ${ok ? 'Home win probability ' + Math.round(hp * 100) + ' percent.' : ''}`);
+    b.onclick = () => pickGame(g); host.appendChild(b);
+  });
 }
 function pickGame(g) {
   if (S.running) return;
   S.gameId = g.id; $('selAway').value = g.away; $('selHome').value = g.home; S.away = g.away; S.home = g.home; S.out.clear();
-  drawChips(); headline(); drawGames(); run();
+  drawChips(); headline(); showTab('match'); run();
+}
+
+/* ---------- quick simulations for the game cards ---------- */
+function summarize(T, agg, N) {
+  let hw = 0, sa = 0, sh = 0;
+  for (let g = 0; g < N; g++) { if (agg.hp[g] > agg.ap[g]) hw++; sa += agg.ap[g]; sh += agg.hp[g]; }
+  const players = [];
+  for (let ti = 0; ti < 2; ti++) for (let k = 0; k < T[ti].n; k++) {
+    const m = s_ => agg.sums[ti][k * NS + s_] / N;
+    players.push({ name: T[ti].players[k].name, team: T[ti].abbr, opp: T[1 - ti].abbr, min: m(X.MIN), pts: m(X.PTS), reb: m(X.OREB) + m(X.DREB), ast: m(X.AST), tpm: m(X.FG3M) });
+  }
+  return { hw: hw / N, ap: sa / N, hp: sh / N, players };
+}
+function storeLite(R) { if (S.out.size) return; S.lite[S.away + '@' + S.home] = summarize(R.T, R.agg, R.N); }
+async function liteSim(away, home) {
+  const lg = S.league, T = [buildTeam(away, lg.teams[away] || {}, rosterOf(away)), buildTeam(home, lg.teams[home] || {}, rosterOf(home))];
+  const cfg = Object.assign({}, CFG, { pace: (T[0].pace + T[1].pace) / 2 });
+  const prm = await prepare(T, cfg, null, true), N = 2500, agg = newAgg(N, false);
+  for (let s = 0; s < N; s += 250) { runBatch(T, prm, cfg, cfg.seed * 1000, s, 250, agg); await tick(); }
+  return summarize(T, agg, N);
+}
+let liteBusy = false;
+async function runLiteQueue() {
+  if (liteBusy) return; liteBusy = true;
+  try {
+    for (;;) {
+      const g = S.list.find(g => g.status !== 3 && !S.lite[gkey(g)]); if (!g) break;
+      while (S.running) await new Promise(r => setTimeout(r, 250));
+      const lg = S.league, key = gkey(g);
+      let res; try { res = await liteSim(g.away, g.home); } catch (e) { res = { err: true }; console.error(e); }
+      if (S.league !== lg) continue;
+      if (!S.lite[key]) S.lite[key] = res;
+      renderCards(); renderTop();
+    }
+  } finally { liteBusy = false; }
+}
+
+/* ---------- tabs ---------- */
+function drawMatchVisuals() {
+  if (!S.R || S.tab !== 'match') { S.dirty = !!S.R; return; }
+  S.dirty = false; courtG = null; animateScatter();
+  drawShotCourt($('cvCourtA'), S.R.T[0], 0, $('capA')); drawShotCourt($('cvCourtH'), S.R.T[1], 1, $('capH'));
+}
+function showTab(tab) {
+  S.tab = tab; if (S.playing && tab !== 'match') stopPlay();
+  document.querySelectorAll('.view').forEach(v => v.hidden = v.id !== 'v-' + tab);
+  document.querySelectorAll('.tabbar button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
+  window.scrollTo(0, 0);
+  if (tab === 'match') { if (!S.R && !S.running) run(); else if (S.dirty) drawMatchVisuals(); else { courtG = null; drawScatter(1); } }
+  if (tab === 'players') renderTop();
+  if (tab === 'props') renderPropsHead();
+}
+document.querySelectorAll('.tabbar button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+$('btnToMatch').onclick = () => showTab('match');
+
+/* ---------- players tab: best projected lines across the day ---------- */
+const STATLAB = { pts: 'PTS', reb: 'REB', ast: 'AST', tpm: '3PM' };
+function renderTop() {
+  if (S.tab !== 'players') return;
+  const rows = [], games = S.list || []; let pend = 0;
+  const seen = new Set();
+  games.forEach(g => { const L = S.lite[gkey(g)]; if (!L || L.err) { if (g.status !== 3) pend++; return; } if (seen.has(gkey(g))) return; seen.add(gkey(g)); L.players.forEach(p => rows.push(p)); });
+  const st = S.topStat;
+  rows.sort((a, b) => b[st] - a[st]);
+  const top = rows.slice(0, 20);
+  $('topNote').textContent = games.length ? `Projected averages from quick simulations of ${dayLabel(S.day).toLowerCase()}'s games.` + (pend ? ` ${pend} more still simulating…` : '') : 'No schedule loaded. Run a matchup and its players show up below.';
+  $('topTable').innerHTML = top.length ? `<table><thead><tr><th>Player</th><th>OPP</th><th>MIN</th>${Object.keys(STATLAB).map(k => `<th${k === st ? ' style="color:var(--hi)"' : ''}>${STATLAB[k]}</th>`).join('')}</tr></thead><tbody>${top.map(p => `<tr><td>${p.name}</td><td class="dim">${p.team} v ${p.opp}</td><td>${p.min.toFixed(0)}</td>${Object.keys(STATLAB).map(k => `<td${k === st ? ' class="pts"' : ''}>${p[k].toFixed(1)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '';
+  $('projNote').textContent = S.R ? `From the full 10,000-game run of ${S.R.T[0].abbr} @ ${S.R.T[1].abbr}. Pick a game on the Games tab to change it.` : 'Pick a game on the Games tab to see every player on the floor.';
+  $('projSec').hidden = !S.R;
+}
+document.querySelectorAll('#topStat button').forEach(b => b.onclick = () => { S.topStat = b.dataset.s; document.querySelectorAll('#topStat button').forEach(x => x.setAttribute('aria-pressed', x === b)); renderTop(); });
+
+/* ---------- props tab ---------- */
+const PROPLAB = { pts: 'Points', reb: 'Rebounds', ast: 'Assists', '3pm': '3-pointers', pra: 'Pts+Reb+Ast', pr: 'Pts+Reb', pa: 'Pts+Ast', ra: 'Reb+Ast' };
+function renderPropsHead() {
+  if (S.tab !== 'props') return;
+  $('propNote').textContent = S.R ? `${S.R.T[0].name} @ ${S.R.T[1].name} · from 10,000 simulated games.` : 'Pick a game on the Games tab first, then check any player and line here.';
+  $('propPlayer').disabled = !S.R; if (S.R) propList();
+}
+function propList() {
+  const R = S.R, key = $('propStat').value, rows = [];
+  for (let ti = 0; ti < 2; ti++) for (let k = 0; k < R.T[ti].n; k++) {
+    const v = statVec(ti, k, key); let s = 0; for (const x of v) s += x; const mean = s / v.length;
+    const line = Math.round(mean - .5) + .5; let over = 0; for (const x of v) if (x > line) over++;
+    rows.push({ ti, k, name: R.T[ti].players[k].name, ab: R.T[ti].abbr, mean, line, over: over / v.length });
+  }
+  rows.sort((a, b) => b.mean - a.mean);
+  $('propListLabel').textContent = `Every player · ${PROPLAB[key]} · tap a row to check it`;
+  $('propList').innerHTML = `<table><thead><tr><th>Player</th><th>AVG</th><th>LINE</th><th>OVER</th><th>UNDER</th></tr></thead><tbody>${rows.map(r => `<tr class="clickable" data-v="${r.ti}:${r.k}"><td><span class="${r.ti ? 'home' : 'away'}">${r.ab}</span> ${r.name}</td><td class="pts">${r.mean.toFixed(1)}</td><td>${r.line.toFixed(1)}</td><td>${(r.over * 100).toFixed(0)}%</td><td>${((1 - r.over) * 100).toFixed(0)}%</td></tr>`).join('')}</tbody></table>`;
+  $('propList').querySelectorAll('tr.clickable').forEach(tr => tr.onclick = () => { $('propPlayer').value = tr.dataset.v; propUpdate(true); $('propOut').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
 }
 async function loadLocal() {
   for (const base of ['data/', '../data/']) {   // hosted copy first, then the copy served from this computer
@@ -812,6 +989,6 @@ async function loadLocal() {
   }
   return false;
 }
-setLeague(DEMO_LEAGUE, 'demo');
-loadLocal().then(ok => { if (ok && S.firstGame) pickGame(S.firstGame); else run(); });
+setLeague(DEMO_LEAGUE, 'demo'); drawGames();
+loadLocal().then(ok => { if (!(ok && S.firstGame)) showTab('match'); });
 </script>
