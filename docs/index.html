@@ -133,7 +133,7 @@ tr.total td { border-top: 1px solid var(--line); color: var(--ink2); }
 .view[hidden] { display: none; }
 .view { display: flex; flex-direction: column; gap: 36px; }
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--panel); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
-.tabin { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+.tabin { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); }
 .tabbar button { border: 0; background: none; border-radius: 0; width: auto; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 4px 8px; font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: .02em; }
 .tabbar button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .tabbar button[aria-selected="true"] { color: var(--hi); }
@@ -157,6 +157,16 @@ tr.total td { border-top: 1px solid var(--line); color: var(--ink2); }
 .empty button { width: auto; padding: 9px 14px; }
 td.pick, th.pick { cursor: pointer; }
 tr.clickable { cursor: pointer; }
+.edgerow { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 10px; align-items: end; }
+.edgebtns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.edgebtns button { width: auto; padding: 9px 14px; }
+textarea.paste { width: 100%; min-height: 84px; resize: vertical; font: inherit; font-size: 14px; background: var(--chip); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; box-sizing: border-box; }
+.tag { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--ink2); }
+.tag.big { background: var(--hi); color: var(--acc-ink); border-color: transparent; }
+.tag.watch { border-color: var(--hi); color: var(--hi); }
+.over { color: var(--hi); font-weight: 700; } .under { color: var(--home); font-weight: 700; }
+#edTable th, #edTable td { padding-left: 5px; padding-right: 5px; }
+button.x { width: auto; border: 0; background: none; color: var(--muted); padding: 4px 8px; font-size: 16px; }
 tr.clickable:hover td { background: var(--line); }
 td.dim { color: var(--ink2); }
 
@@ -211,6 +221,7 @@ td.pts { color: var(--acc); font-weight: 700; }
 .courts figcaption { font-size: 13px; }
 h1 em, h2 em { color: var(--acc); }
 tr.clickable:hover td { background: var(--chip); }
+#edTable table { font-size: 13px; } #edTable td:first-child { white-space: normal; min-width: 0; } #edTable th, #edTable td { padding: 6px 4px; }
 </style>
 
 <main>
@@ -328,6 +339,32 @@ tr.clickable:hover td { background: var(--chip); }
     <p class="fine" id="foot"></p>
   </section>
  </div>
+
+ <div class="view" id="v-edges" hidden>
+  <section class="scene">
+    <h2>Line <em>edges.</em></h2>
+    <p class="note" id="edgeNote"></p>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px">
+      <div class="edgerow">
+        <div class="field" style="grid-column: 1 / -1"><label class="label" for="edPlayer">Player</label><select id="edPlayer"></select></div>
+        <div class="field"><label class="label" for="edStat">Stat</label><select id="edStat"><option value="pts">Points</option><option value="reb">Rebounds</option><option value="ast">Assists</option><option value="tpm">3-pointers</option><option value="pra">Pts+Reb+Ast</option></select></div>
+        <div class="field"><label class="label" for="edLine">Book line</label><input type="number" id="edLine" step="0.5" placeholder="24.5"></div>
+        <div class="field"><label class="label" for="edO">Over odds</label><input type="number" id="edO" placeholder="-110"></div>
+        <div class="field"><label class="label" for="edU">Under odds</label><input type="number" id="edU" placeholder="-110"></div>
+      </div>
+      <div class="edgebtns"><button class="primary" id="edAdd" style="grid-column:auto">Add line</button><button id="edClear">Clear all</button>
+        <span class="label" style="margin-left:auto">Big gap at</span><select id="edThr" style="width:auto"><option value="5">5 pts</option><option value="7" selected>7 pts</option><option value="10">10 pts</option></select></div>
+      <details><summary class="label" style="cursor:pointer">Paste several lines</summary>
+        <p class="fine" style="margin:8px 0">One per line: player, stat, line, then optional over and under odds. Example: <i>Luka Doncic pts 28.5 -115 -105</i>. Stats: pts, reb, ast, 3pm, pra.</p>
+        <textarea class="paste" id="edPaste" placeholder="Luka Doncic pts 28.5&#10;Victor Wembanyama reb 11.5 -120 +100"></textarea>
+        <div class="edgebtns" style="margin-top:8px"><button id="edPasteBtn">Add pasted lines</button><span class="fine" id="edPasteMsg"></span></div>
+      </details>
+    </div>
+    <span class="label">Biggest gaps first</span>
+    <div class="tablewrap" id="edTable"></div>
+    <p class="fine">Edge is the sim's chance of the leaned side minus the book's chance after removing the vig. Odds default to -110 both ways. These lines are typed by you; the sim's numbers have not been checked against real results yet, so treat a gap as a reason to look closer, not a signal.</p>
+  </section>
+ </div>
 </main>
 
 <nav class="tabbar" aria-label="Sections"><div class="tabin" role="tablist">
@@ -335,6 +372,7 @@ tr.clickable:hover td { background: var(--chip); }
   <button role="tab" data-tab="match" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.8" y="5.5" width="18.4" height="13" rx="1.5"/><path d="M12 5.5v13"/><circle cx="12" cy="12" r="2.6"/></svg><span>Matchup</span></button>
   <button role="tab" data-tab="players" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20c.8-3.8 3.7-5.8 7.2-5.8s6.4 2 7.2 5.8"/></svg><span>Players</span></button>
   <button role="tab" data-tab="props" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M21 19H3"/><path d="M2.5 13.5h19" stroke-dasharray="2 2.4"/></svg><span>Props</span></button>
+  <button role="tab" data-tab="edges" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16M4 16h16"/><path d="M8 4l-4 4 4 4M16 12l4 4-4 4"/></svg><span>Edges</span></button>
 </div></nav>
 
 <script>
@@ -506,7 +544,7 @@ function runGame(seed, T, prm, cfg, cap, rec) {
 }
 
 function newAgg(N, full) {
-  const a = { N, sums: [new Float64Array(K * NS), new Float64Array(K * NS)], hp: new Int16Array(N), ap: new Int16Array(N), ot: new Uint8Array(N) };
+  const a = { N, sums: [new Float64Array(K * NS), new Float64Array(K * NS)], hp: new Int16Array(N), ap: new Int16Array(N), ot: new Uint8Array(N), hist: [new Uint16Array(K * 500), new Uint16Array(K * 500)] };
   if (full) { a.cp = new Int16Array(25 * N); a.pr = [new Int16Array(N * K * 4), new Int16Array(N * K * 4)]; }
   return a;
 }
@@ -516,6 +554,9 @@ function runBatch(T, prm, cfg, seed0, start, count, agg) {
     for (let t = 0; t < 2; t++) {
       const s = agg.sums[t];
       for (let i = 0; i < K * NS; i++) s[i] += st[t * K * NS + i];
+      { const h = agg.hist[t], c = v => (v > 99 ? 99 : v < 0 ? 0 : v) | 0;
+        for (let k = 0; k < K; k++) { const b = t * K * NS + k * NS, o = k * 500, p = st[b + X.PTS], r = st[b + X.OREB] + st[b + X.DREB], a = st[b + X.AST];
+          h[o + c(p)]++; h[o + 100 + c(r)]++; h[o + 200 + c(a)]++; h[o + 300 + c(st[b + X.FG3M])]++; h[o + 400 + c(p + r + a)]++; } }
       if (agg.pr) for (let k = 0; k < K; k++) { const b = t * K * NS + k * NS, q = (g * K + k) * 4;
         agg.pr[t][q] = st[b + X.PTS]; agg.pr[t][q + 1] = st[b + X.OREB] + st[b + X.DREB]; agg.pr[t][q + 2] = st[b + X.AST]; agg.pr[t][q + 3] = st[b + X.FG3M]; }
     }
@@ -833,6 +874,57 @@ function propUpdate(resetLine) {
   $('propOut').innerHTML = `<b>${S.R.T[ti].players[k].name}</b> · mean ${mean.toFixed(1)} · median ${srt[n >> 1]}<br>Over ${line}: <b>${(over / n * 100).toFixed(1)}%</b> · Under: <b>${((n - over - push) / n * 100).toFixed(1)}%</b>` + (push ? ` · Push ${(push / n * 100).toFixed(1)}%` : '');
 }
 
+/* ---------- edges tab: your book lines vs the sim ---------- */
+const ESTAT = { pts: 0, reb: 1, ast: 2, tpm: 3, pra: 4 }, ELAB = { pts: 'PTS', reb: 'REB', ast: 'AST', tpm: '3PM', pra: 'PRA' };
+const norm = t => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+function loadEdges() { try { return JSON.parse(localStorage.getItem('nbasim_edges') || '[]'); } catch (e) { return []; } }
+function saveEdges() { try { localStorage.setItem('nbasim_edges', JSON.stringify(S.edges)); } catch (e) { /* storage unavailable */ } }
+S.edges = loadEdges();
+function edgePlayers() {
+  const m = new Map(); let pend = 0;
+  (S.list || []).forEach(g => { if (g.status === 3) return; const L = S.lite[gkey(g)]; if (!L || L.err) { pend++; return; } L.players.forEach(p => { if (p.min >= 8) m.set(norm(p.name), p); }); });
+  return { m, pend };
+}
+const impl = o => o < 0 ? -o / (-o + 100) : 100 / (o + 100);
+function evalEdge(e, m) {
+  const p = m.get(norm(e.name)); if (!p) return null;
+  const ge = p.dist[ESTAT[e.stat]]; let mean = 0; for (let v = 1; v <= 100; v++) mean += ge[v];
+  const over = ge[Math.min(100, Math.floor(e.line) + 1)], under = 1 - ge[Math.min(100, Math.ceil(e.line))];
+  const po = impl(e.o || -110), pu = impl(e.u || -110), bo = po / (po + pu), bu = 1 - bo;
+  const eo = over - bo, eu = under - bu, lean = eo >= eu ? 'OVER' : 'UNDER';
+  return { p, mean, over, under, bo, lean, edge: Math.max(eo, eu) };
+}
+function renderEdges() {
+  if (S.tab !== 'edges') return;
+  const { m, pend } = edgePlayers(), sel = $('edPlayer'), cur = sel.value;
+  const names = [...m.values()].sort((a, b) => a.name.localeCompare(b.name));
+  if (sel.options.length !== names.length) { sel.innerHTML = names.map(p => `<option>${p.name}</option>`).join(''); if (cur) sel.value = cur; }
+  $('edgeNote').textContent = names.length ? `${names.length} players from ${dayLabel(S.day).toLowerCase()}'s games.` + (pend ? ` ${pend} more games still simulating…` : '') + ' Add the lines your book has posted.' : 'Games are still simulating, or none are left today. Players show up here as each game finishes.';
+  const thr = +$('edThr').value / 100, thr2 = thr * .6;
+  const rows = S.edges.map((e, i) => ({ e, i, r: evalEdge(e, m) })).sort((a, b) => (b.r ? b.r.edge : -9) - (a.r ? a.r.edge : -9));
+  $('edTable').innerHTML = rows.length ? `<table><thead><tr><th>Player</th><th>SIM / BOOK OVER</th><th>LEAN</th><th>EDGE</th><th></th></tr></thead><tbody>${rows.map(({ e, i, r }) => r
+    ? `<tr><td>${r.p.name}<br><span class="dim">${ELAB[e.stat]} ${e.line} · avg ${r.mean.toFixed(1)}</span></td><td>${(r.over * 100).toFixed(0)}% / ${(r.bo * 100).toFixed(0)}%</td><td class="${r.lean === 'OVER' ? 'over' : 'under'}">${r.lean}</td><td><b>${(r.edge * 100).toFixed(1)}</b><br>${r.edge >= thr ? '<span class="tag big">BIG</span>' : r.edge >= thr2 ? '<span class="tag watch">WATCH</span>' : ''}</td><td><button class="x" data-i="${i}" aria-label="Remove">×</button></td></tr>`
+    : `<tr><td>${e.name}<br><span class="dim">${ELAB[e.stat]} ${e.line}</span></td><td colspan="3" class="dim">${pend ? 'waiting for sim…' : 'not in today\'s sims'}</td><td><button class="x" data-i="${i}" aria-label="Remove">×</button></td></tr>`).join('')}</tbody></table>` : '<p class="fine">No lines yet. Add one above.</p>';
+  $('edTable').querySelectorAll('button.x').forEach(b => b.onclick = () => { S.edges.splice(+b.dataset.i, 1); saveEdges(); renderEdges(); });
+}
+function addEdge(name, stat, line, o, u) { if (!name || isNaN(line)) return false; S.edges = S.edges.filter(x => !(norm(x.name) === norm(name) && x.stat === stat)); S.edges.push({ name, stat, line, o: o || 0, u: u || 0 }); saveEdges(); return true; }
+$('edAdd').onclick = () => { if (addEdge($('edPlayer').value, $('edStat').value, parseFloat($('edLine').value), parseFloat($('edO').value), parseFloat($('edU').value))) { $('edLine').value = ''; renderEdges(); } };
+$('edClear').onclick = () => { S.edges = []; saveEdges(); renderEdges(); };
+$('edThr').onchange = renderEdges;
+const SAL = { pts: 'pts', points: 'pts', point: 'pts', reb: 'reb', rebs: 'reb', rebounds: 'reb', ast: 'ast', asts: 'ast', assists: 'ast', '3pm': 'tpm', '3s': 'tpm', threes: 'tpm', '3pt': 'tpm', '3pts': 'tpm', tpm: 'tpm', pra: 'pra' };
+$('edPasteBtn').onclick = () => {
+  const { m } = edgePlayers(); let ok = 0, bad = [];
+  $('edPaste').value.split('\n').map(l => l.trim()).filter(Boolean).forEach(l => {
+    const t = l.split(/\s+/), si = t.findIndex(x => SAL[x.toLowerCase()]);
+    const nums = si < 0 ? [] : t.slice(si + 1).map(x => parseFloat(x.replace('+', ''))).filter(x => !isNaN(x));
+    const nm = si > 0 ? t.slice(0, si).join(' ') : '';
+    const hit = nm && [...m.values()].find(p => norm(p.name) === norm(nm));
+    if (hit && nums.length && addEdge(hit.name, SAL[t[si].toLowerCase()], nums[0], nums[1], nums[2])) ok++; else bad.push(l);
+  });
+  $('edPasteMsg').textContent = `${ok} added` + (bad.length ? `, ${bad.length} not understood: ${bad.slice(0, 2).join(' | ')}${bad.length > 2 ? '…' : ''}` : '');
+  if (ok) { $('edPaste').value = bad.join('\n'); renderEdges(); }
+};
+
 /* ---------- run ---------- */
 async function run() {
   if (S.running) return; S.running = true; stopPlay();
@@ -947,13 +1039,19 @@ function pickGame(g) {
 }
 
 /* ---------- quick simulations for the game cards ---------- */
+function geDist(h, k, N) {   // for each of 5 stats: P(stat >= v) for v = 0..100
+  const out = [];
+  for (let s_ = 0; s_ < 5; s_++) { const ge = new Float32Array(101), o = k * 500 + s_ * 100; let run = 0;
+    for (let v = 99; v >= 0; v--) { run += h[o + v]; ge[v] = run / N; } out.push(ge); }
+  return out;
+}
 function summarize(T, agg, N) {
   let hw = 0, sa = 0, sh = 0;
   for (let g = 0; g < N; g++) { if (agg.hp[g] > agg.ap[g]) hw++; sa += agg.ap[g]; sh += agg.hp[g]; }
   const players = [];
   for (let ti = 0; ti < 2; ti++) for (let k = 0; k < T[ti].n; k++) {
     const m = s_ => agg.sums[ti][k * NS + s_] / N;
-    players.push({ name: T[ti].players[k].name, team: T[ti].abbr, opp: T[1 - ti].abbr, min: m(X.MIN), pts: m(X.PTS), reb: m(X.OREB) + m(X.DREB), ast: m(X.AST), tpm: m(X.FG3M) });
+    players.push({ name: T[ti].players[k].name, team: T[ti].abbr, opp: T[1 - ti].abbr, min: m(X.MIN), pts: m(X.PTS), reb: m(X.OREB) + m(X.DREB), ast: m(X.AST), tpm: m(X.FG3M), dist: geDist(agg.hist[ti], k, N) });
   }
   return { hw: hw / N, ap: sa / N, hp: sh / N, players };
 }
@@ -976,7 +1074,7 @@ async function runLiteQueue() {
       let res; try { res = await liteSim(g.away, g.home); } catch (e) { res = { err: true }; console.error(e); }
       if (S.league !== lg) continue;
       if (!S.lite[key]) S.lite[key] = res;
-      renderCards(); renderTop();
+      renderCards(); renderTop(); renderEdges();
     }
   } finally { liteBusy = false; }
 }
@@ -995,6 +1093,7 @@ function showTab(tab) {
   if (tab === 'match') { if (!S.R && !S.running) run(); else if (S.dirty) drawMatchVisuals(); else { courtG = null; drawScatter(1); } }
   if (tab === 'players') renderTop();
   if (tab === 'props') renderPropsHead();
+  if (tab === 'edges') renderEdges();
 }
 document.querySelectorAll('.tabbar button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
 $('btnToMatch').onclick = () => showTab('match');
