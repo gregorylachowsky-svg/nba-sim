@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0c10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NBA Sim">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>Million Runs NBA Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one vertical broadcast column (like the video), scenes stacked top to bottom.
+   Dark by choice: the subject is a night-game data broadcast. */
+:root {
+  --bg: #0a0c10;
+  --panel: #11141a;
+  --line: #232832;
+  --grid: #1b2029;
+  --ink: #e9ebef;
+  --ink2: #9ca4b2;
+  --muted: #667080;
+  --hi: #f2c230;
+  --away: #86c232;
+  --home: #ee4455;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+:root[data-cb="1"] { --away: #4ea3ff; --home: #ffa63a; }
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 1.45;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 56px;
+}
+main { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; }
+h1 { font-size: clamp(26px, 7vw, 36px); line-height: 1.1; font-weight: 700; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--hi); display: block; }
+h2 { font-size: clamp(20px, 5.4vw, 26px); line-height: 1.15; margin: 0; font-weight: 700; text-wrap: balance; }
+h2 em { font-style: normal; color: var(--hi); }
+.label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.scene { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.away { color: var(--away); } .home { color: var(--home); }
+
+/* controls */
+.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+select, input[type="number"], button, .filebtn {
+  font: inherit; font-size: 14px; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; padding: 9px 10px; min-width: 0; width: 100%;
+}
+select:focus-visible, input:focus-visible, button:focus-visible, .filebtn:focus-within { outline: 2px solid var(--hi); outline-offset: 2px; }
+button { cursor: pointer; font-weight: 600; }
+button:hover:not(:disabled), .filebtn:hover { border-color: var(--ink2); }
+button:disabled { opacity: .55; cursor: progress; }
+button.primary { background: var(--hi); color: #14110a; border-color: var(--hi); grid-column: 1 / -1; padding: 12px; font-size: 15px; }
+button.primary:hover:not(:disabled) { filter: brightness(1.08); border-color: var(--hi); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row > * { flex: 0 0 auto; width: auto; }
+.filebtn { display: inline-flex; align-items: center; cursor: pointer; font-weight: 500; color: var(--ink2); }
+.filebtn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; padding: 4px 8px; border-radius: 99px; width: auto; font-weight: 500; color: var(--ink2); }
+.chip[aria-pressed="true"] { text-decoration: line-through; color: var(--muted); border-style: dashed; }
+.tgl { width: auto; font-weight: 500; color: var(--ink2); }
+.tgl[aria-pressed="true"] { border-color: var(--hi); color: var(--ink); }
+.games { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.game { text-align: left; display: flex; flex-direction: column; gap: 2px; font-family: var(--font-mono); font-size: 13px; padding: 9px 10px; }
+.game small { font-weight: 400; color: var(--ink2); font-size: 11px; }
+.game[aria-pressed="true"] { border-color: var(--hi); background: var(--line); }
+.daytabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.daytabs button { width: auto; flex: 0 0 auto; padding: 6px 11px; font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: var(--ink2); }
+.daytabs button[aria-pressed="true"] { border-color: var(--hi); color: var(--ink); }
+.note { color: var(--ink2); font-size: 13px; margin: 0; }
+.status { font-family: var(--font-mono); font-size: 12px; color: var(--ink2); min-height: 18px; }
+
+/* canvases */
+canvas { display: block; width: 100%; height: auto; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+.stats-row { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.stats-row b { color: var(--hi); font-weight: 600; }
+.courts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.courts figcaption { font-family: var(--font-mono); font-size: 11px; margin-top: 6px; color: var(--ink2); line-height: 1.5; }
+.courts figcaption b { display: block; letter-spacing: .06em; font-weight: 600; }
+figure { margin: 0; min-width: 0; }
+@media (max-width: 440px) { .courts { grid-template-columns: 1fr; } }
+
+/* scoreboard */
+.board { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.board .tm { font-size: 13px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.board .tm:last-child { text-align: right; }
+.board .sc { font-family: var(--font-mono); font-size: clamp(30px, 9vw, 42px); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.board .sc:last-child { text-align: right; }
+.board .clock { text-align: center; font-family: var(--font-mono); font-size: 12px; color: var(--ink2); line-height: 1.3; }
+.wp { display: flex; height: 8px; border-radius: 2px; overflow: hidden; background: var(--line); }
+.wp > div { transition: width .25s ease; }
+.wp-l { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: var(--muted); margin-top: 5px; text-transform: uppercase; }
+.caption { font-family: var(--font-mono); font-size: 13px; min-height: 40px; line-height: 1.4; color: var(--ink); }
+.caption .dim { color: var(--ink2); }
+.leaders { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+.leaders div div { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
+.leaders div:last-child { text-align: right; } .leaders div:last-child div { flex-direction: row-reverse; }
+.player { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.player button { width: auto; padding: 8px 14px; }
+.player input[type="range"] { flex: 1 1 140px; min-width: 0; accent-color: var(--hi); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; width: auto; padding: 8px 11px; background: var(--panel); color: var(--ink2); font-family: var(--font-mono); font-size: 12px; }
+.seg button[aria-pressed="true"] { background: var(--line); color: var(--ink); }
+
+/* final */
+.bigline { font-size: clamp(30px, 9vw, 44px); font-weight: 700; line-height: 1.05; margin: 0; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+th, td { padding: 4px 6px; text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--muted); font-weight: 500; font-size: 10px; letter-spacing: .06em; border-bottom: 1px solid var(--line); }
+td.pts { color: var(--hi); font-weight: 600; }
+tr.total td { border-top: 1px solid var(--line); color: var(--ink2); }
+.winbar { display: flex; height: 30px; border-radius: 4px; overflow: hidden; font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: #0a0c10; }
+.winbar > div { display: flex; align-items: center; padding: 0 8px; min-width: 0; }
+.winbar > div:last-child { justify-content: flex-end; }
+.legendline { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; color: var(--ink2); margin-top: 6px; gap: 10px; }
+.fine { font-family: var(--font-mono); font-size: 11px; color: var(--muted); line-height: 1.55; margin: 0; }
+.proprow { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; align-items: end; }
+.propout { font-family: var(--font-mono); font-size: 14px; line-height: 1.6; }
+.propout b { color: var(--hi); }
+@media (prefers-reduced-motion: reduce) { .wp > div { transition: none; } }
+</style>
+
+<main>
+  <header class="scene">
+    <h1 id="headline">We simulated tonight's <em>a game 10,000 times.</em></h1>
+    <p class="note" id="srcnote"></p>
+    <div class="controls">
+      <div class="field" style="grid-column:1/-1" id="gamesWrap" hidden>
+        <span class="label">Pick a game</span>
+        <div class="daytabs" id="dayTabs" role="group" aria-label="Game day"></div>
+        <div class="games" id="gameList"></div>
+      </div>
+      <div class="field"><label class="label" for="selAway">Away</label><select id="selAway"></select></div>
+      <div class="field"><label class="label" for="selHome">Home</label><select id="selHome"></select></div>
+      <div class="field" style="grid-column:1/-1"><span class="label">Or pick any two teams · click a player to mark him out</span><div class="chips" id="chips"></div></div>
+      <button class="primary" id="btnRun">Run 10,000 simulations</button>
+    </div>
+    <div class="row">
+      <label class="filebtn"><input type="file" id="fileLeague" accept=".json,application/json">Load league.json</label>
+      <button class="tgl" id="btnCb" aria-pressed="false">Colorblind-safe colors</button>
+    </div>
+    <div class="status" id="status" role="status"></div>
+  </header>
+
+  <section class="scene" aria-labelledby="s1">
+    <span class="label" id="s1">10,000 simulated finals</span>
+    <div class="card"><canvas id="cvScatter" width="600" height="600" aria-label="Scatter of simulated final scores, home points on the x axis and away points on the y axis"></canvas></div>
+    <div class="stats-row"><span>RUNS <b id="runCount">0</b></span><span id="winCounts"></span></div>
+  </section>
+
+  <section class="scene" aria-labelledby="s2">
+    <h2 id="s2">Every player is built from <em>his own rates.</em></h2>
+    <div class="courts">
+      <figure><canvas id="cvCourtA" width="320" height="300" aria-label="Shot dots for the away team's top scorer"></canvas><figcaption id="capA"></figcaption></figure>
+      <figure><canvas id="cvCourtH" width="320" height="300" aria-label="Shot dots for the home team's top scorer"></canvas><figcaption id="capH"></figcaption></figure>
+    </div>
+    <p class="fine">Each dot is a shot attempt drawn from the player's own 3-point rate and 2-point/3-point accuracy. Spots on the floor are illustrative until shot-chart data is loaded.</p>
+  </section>
+
+  <section class="scene" aria-labelledby="s3">
+    <h2 id="s3">Watch the <em>most typical</em> game.</h2>
+    <div class="board" id="board">
+      <div class="tm away" id="bAway">—</div>
+      <div class="clock" id="bClock"></div>
+      <div class="tm home" id="bHome">—</div>
+      <div class="sc away" id="sAway">0</div>
+      <div></div>
+      <div class="sc home" id="sHome">0</div>
+    </div>
+    <div><div class="wp"><div id="wpA" style="width:50%;background:var(--away)"></div><div id="wpH" style="width:50%;background:var(--home)"></div></div>
+      <div class="wp-l"><span id="wpAl">50%</span><span>Win probability · 10,000 runs</span><span id="wpHl">50%</span></div></div>
+    <div class="card"><canvas id="cvReplay" width="600" height="564" aria-label="Half court showing the ten players on the floor"></canvas></div>
+    <div class="caption" id="caption" aria-live="polite"></div>
+    <div class="leaders"><div id="ldA"></div><div id="ldH"></div></div>
+    <div class="player">
+      <button id="btnPlay">▶ Replay</button>
+      <div class="seg" role="group" aria-label="Replay speed"><button data-sp="1" aria-pressed="true">1×</button><button data-sp="2" aria-pressed="false">2×</button><button data-sp="4" aria-pressed="false">4×</button></div>
+      <input type="range" id="scrub" min="0" max="0" value="0" aria-label="Scrub through the game">
+    </div>
+  </section>
+
+  <section class="scene" aria-labelledby="s4">
+    <span class="label" id="s4">Final box score · the typical game</span>
+    <div class="tablewrap" id="boxA"></div>
+    <div class="tablewrap" id="boxH"></div>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px">
+      <span class="label">The most typical game</span>
+      <p class="bigline" id="typical">—</p>
+      <span class="label">All 10,000 runs</span>
+      <div><div class="winbar"><div id="wbA" style="background:var(--away)"></div><div id="wbH" style="background:var(--home)"></div></div>
+        <div class="legendline"><span id="wlA"></span><span id="wlH"></span></div></div>
+      <span class="mono" id="medline" style="font-size:12px;color:var(--ink2)"></span>
+    </div>
+  </section>
+
+  <section class="scene" aria-labelledby="s5">
+    <h2 id="s5">Player <em>projections.</em></h2>
+    <div class="seg" role="group" aria-label="Team" id="projTabs"><button data-t="0" aria-pressed="true">Away</button><button data-t="1" aria-pressed="false">Home</button></div>
+    <div class="tablewrap" id="projTable"></div>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px">
+      <span class="label">Prop check</span>
+      <div class="proprow">
+        <div class="field"><label class="label" for="propPlayer">Player</label><select id="propPlayer"></select></div>
+        <div class="field"><label class="label" for="propStat">Stat</label>
+          <select id="propStat"><option value="pts">Points</option><option value="reb">Rebounds</option><option value="ast">Assists</option><option value="3pm">3-pointers</option><option value="pra">Pts+Reb+Ast</option><option value="pr">Pts+Reb</option><option value="pa">Pts+Ast</option><option value="ra">Reb+Ast</option></select></div>
+        <div class="field"><label class="label" for="propLine">Line</label><input type="number" id="propLine" step="0.5" value="20.5"></div>
+      </div>
+      <div class="propout" id="propOut"></div>
+    </div>
+    <p class="fine" id="foot"></p>
+  </section>
+</main>
+
+<script>
+const DEMO_LEAGUE = {"season":"demo","teams":{"TID":{"name":"Coastal Tide","pace":99.0,"off_rtg":115,"def_rtg":115},"SPK":{"name":"Desert Sparks","pace":99.0,"off_rtg":115,"def_rtg":115}},"players":{"TID":[{"id":0,"name":"Marcus Hale","mpg":35,"gp_cur":70,"tot":{"GP":70,"MIN":2450,"FGM":593.72,"FGA":1257.88,"FG3M":186.17,"FG3A":503.15,"FTM":356.4,"FTA":419.29,"OREB":41.93,"DREB":269.55,"AST":419.29,"TOV":209.65,"STL":71.88,"BLK":23.96,"PF":0,"PTS":1730.0}},{"id":1,"name":"Dre Whitfield","mpg":33,"gp_cur":70,"tot":{"GP":70,"MIN":2310,"FGM":458.73,"FGA":960.09,"FG3M":131.34,"FG3A":364.84,"FTM":203.31,"FTA":254.14,"OREB":56.48,"DREB":310.62,"AST":169.43,"TOV":112.95,"STL":62.12,"BLK":28.24,"PF":0,"PTS":1252.12}},{"id":2,"name":"Tomas Berg","mpg":31,"gp_cur":70,"tot":{"GP":70,"MIN":2170,"FGM":448.62,"FGA":742.75,"FG3M":11.14,"FG3A":37.14,"FTM":185.69,"FTA":265.27,"OREB":185.69,"DREB":450.95,"AST":132.63,"TOV":132.63,"STL":42.44,"BLK":106.11,"PF":0,"PTS":1094.07}},{"id":3,"name":"Elijah Ward","mpg":30,"gp_cur":70,"tot":{"GP":70,"MIN":2100,"FGM":299.02,"FGA":667.45,"FG3M":108.13,"FG3A":300.35,"FTM":100.12,"FTA":128.35,"OREB":61.61,"DREB":308.05,"AST":128.35,"TOV":77.01,"STL":51.34,"BLK":41.07,"PF":0,"PTS":806.27}},{"id":4,"name":"Jonah Ruiz","mpg":28,"gp_cur":70,"tot":{"GP":70,"MIN":1960,"FGM":291.83,"FGA":670.87,"FG3M":124.11,"FG3A":335.43,"FTM":117.88,"FTA":143.76,"OREB":28.75,"DREB":167.72,"AST":239.6,"TOV":105.42,"STL":62.29,"BLK":14.38,"PF":0,"PTS":825.65}},{"id":5,"name":"Cal Nakamura","mpg":24,"gp_cur":70,"tot":{"GP":70,"MIN":1680,"FGM":266.46,"FGA":616.1,"FG3M":97.04,"FG3A":277.25,"FTM":98.58,"FTA":123.22,"OREB":32.86,"DREB":164.29,"AST":123.22,"TOV":82.15,"STL":41.07,"BLK":16.43,"PF":0,"PTS":728.54}},{"id":6,"name":"Boyd Okafor","mpg":20,"gp_cur":70,"tot":{"GP":70,"MIN":1400,"FGM":214.61,"FGA":376.51,"FG3M":11.3,"FG3A":37.65,"FTM":81.46,"FTA":119.8,"OREB":130.07,"DREB":273.82,"AST":51.34,"TOV":75.3,"STL":27.38,"BLK":54.76,"PF":0,"PTS":521.98}},{"id":7,"name":"Rey Santoro","mpg":18,"gp_cur":70,"tot":{"GP":70,"MIN":1260,"FGM":156.37,"FGA":369.66,"FG3M":73.19,"FG3A":203.31,"FTM":48.06,"FTA":61.61,"OREB":24.64,"DREB":138.62,"AST":61.61,"TOV":46.21,"STL":30.81,"BLK":15.4,"PF":0,"PTS":433.98}},{"id":8,"name":"Theo Vance","mpg":14,"gp_cur":70,"tot":{"GP":70,"MIN":980,"FGM":117.88,"FGA":287.51,"FG3M":48.88,"FG3A":143.76,"FTM":37.38,"FTA":47.92,"OREB":11.98,"DREB":71.88,"AST":95.84,"TOV":47.92,"STL":23.96,"BLK":4.79,"PF":0,"PTS":322.02}},{"id":9,"name":"Gil Moreau","mpg":9,"gp_cur":70,"tot":{"GP":70,"MIN":630,"FGM":79.85,"FGA":184.83,"FG3M":24.4,"FG3A":73.93,"FTM":28.88,"FTA":38.51,"OREB":23.1,"DREB":77.01,"AST":30.81,"TOV":33.89,"STL":13.86,"BLK":9.24,"PF":0,"PTS":212.97}}],"SPK":[{"id":0,"name":"Isaiah Cross","mpg":36,"gp_cur":70,"tot":{"GP":70,"MIN":2520,"FGM":676.98,"FGA":1380.17,"FG3M":183.56,"FG3A":483.06,"FTM":421.58,"FTA":501.88,"OREB":50.19,"DREB":376.41,"AST":345.04,"TOV":238.39,"STL":81.56,"BLK":50.19,"PF":0,"PTS":1959.1}},{"id":1,"name":"Dante Lowry","mpg":33,"gp_cur":70,"tot":{"GP":70,"MIN":2310,"FGM":354.24,"FGA":805.1,"FG3M":152.97,"FG3A":402.55,"FTM":173.1,"FTA":201.28,"OREB":28.75,"DREB":201.28,"AST":488.81,"TOV":161.02,"STL":80.51,"BLK":17.25,"PF":0,"PTS":1034.56}},{"id":2,"name":"Viktor Pell","mpg":30,"gp_cur":70,"tot":{"GP":70,"MIN":2100,"FGM":544.37,"FGA":836.47,"FG3M":3.35,"FG3A":16.73,"FTM":189.77,"FTA":287.54,"OREB":198.66,"DREB":470.51,"AST":156.84,"TOV":146.38,"STL":41.82,"BLK":115.01,"PF":0,"PTS":1281.87}},{"id":3,"name":"Kenji Mora","mpg":29,"gp_cur":70,"tot":{"GP":70,"MIN":2030,"FGM":234.59,"FGA":555.9,"FG3M":137.31,"FG3A":361.34,"FTM":80.86,"FTA":101.07,"OREB":35.38,"DREB":227.42,"AST":101.07,"TOV":65.7,"STL":70.75,"BLK":30.32,"PF":0,"PTS":687.35}},{"id":4,"name":"Amari Boyce","mpg":27,"gp_cur":70,"tot":{"GP":70,"MIN":1890,"FGM":316.19,"FGA":658.72,"FG3M":67.19,"FG3A":197.62,"FTM":121.86,"FTA":164.68,"OREB":84.69,"DREB":329.36,"AST":141.15,"TOV":103.51,"STL":42.35,"BLK":47.05,"PF":0,"PTS":821.42}},{"id":5,"name":"Silas Trent","mpg":25,"gp_cur":70,"tot":{"GP":70,"MIN":1750,"FGM":300.78,"FGA":697.06,"FG3M":112.92,"FG3A":313.68,"FTM":108.48,"FTA":130.7,"OREB":21.78,"DREB":139.41,"AST":174.26,"TOV":100.2,"STL":43.57,"BLK":8.71,"PF":0,"PTS":822.96}},{"id":6,"name":"Wade Okoro","mpg":18,"gp_cur":70,"tot":{"GP":70,"MIN":1260,"FGM":198.19,"FGA":345.04,"FG3M":7.73,"FG3A":27.6,"FTM":65.87,"FTA":94.1,"OREB":109.79,"DREB":235.26,"AST":56.46,"TOV":62.74,"STL":25.09,"BLK":50.19,"PF":0,"PTS":469.99}},{"id":7,"name":"Luca Brandt","mpg":17,"gp_cur":70,"tot":{"GP":70,"MIN":1190,"FGM":149.31,"FGA":355.5,"FG3M":62.21,"FG3A":177.75,"FTM":46.21,"FTA":59.25,"OREB":29.62,"DREB":133.31,"AST":65.17,"TOV":47.4,"STL":29.62,"BLK":14.81,"PF":0,"PTS":407.05}},{"id":8,"name":"Nate Ibarra","mpg":12,"gp_cur":70,"tot":{"GP":70,"MIN":840,"FGM":102.89,"FGA":250.94,"FG3M":42.66,"FG3A":125.47,"FTM":32.62,"FTA":41.82,"OREB":10.46,"DREB":62.74,"AST":79.46,"TOV":41.82,"STL":20.91,"BLK":4.18,"PF":0,"PTS":281.05}},{"id":9,"name":"Owen Dray","mpg":8,"gp_cur":70,"tot":{"GP":70,"MIN":560,"FGM":72.27,"FGA":167.29,"FG3M":22.08,"FG3A":66.92,"FTM":26.14,"FTA":34.85,"OREB":20.91,"DREB":69.71,"AST":27.88,"TOV":30.67,"STL":12.55,"BLK":8.36,"PF":0,"PTS":192.76}}]}};
+</script>
+<script>
+/* ====================================================================
+   ENGINE: possession-level Monte Carlo (port of nba_sim/engine.py)
+   ==================================================================== */
+const K = 10, NS = 14;
+const SN = ['MIN','PTS','FGM','FGA','FG3M','FG3A','FTM','FTA','OREB','DREB','AST','STL','BLK','TOV'];
+const X = {}; SN.forEach((n, i) => X[n] = i);
+const LG = { fg2: .54, fg3: .36, ft: .78, rtg: 115 };
+const ROLE = ['use','astW','orebW','drebW','stlW','blkW'];
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function randn(r) { let u = 0; while (!u) u = r(); const v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185307179586 * v); }
+const shrink = (m, a, p, ps) => (m + p * ps) / (a + ps);
+
+function buildTeam(abbr, info, plist) {
+  const pl = plist.slice().sort((a, b) => b.mpg - a.mpg).slice(0, K);
+  if (pl.length < 6) throw new Error(abbr + ' needs at least 6 available players');
+  const f = () => new Float64Array(K);
+  const t = { abbr, name: info.name || abbr, pace: +info.pace || 99, defRtg: +info.def_rtg || LG.rtg, players: pl, n: pl.length,
+    mpg: f(), use: f(), pTo: f(), pFt: f(), p3: f(), fg2: f(), fg3: f(), ft: f(), astW: f(), orebW: f(), drebW: f(), stlW: f(), blkW: f() };
+  pl.forEach((p, i) => {
+    const q = p.tot, mn = q.MIN, ev = q.FGA + .44 * q.FTA + q.TOV;
+    t.mpg[i] = p.mpg; t.use[i] = ev / mn; t.pTo[i] = q.TOV / ev; t.pFt[i] = .44 * q.FTA / ev;
+    t.p3[i] = q.FG3A / Math.max(q.FGA, 1);
+    t.fg3[i] = shrink(q.FG3M, q.FG3A, LG.fg3, 200);
+    t.fg2[i] = shrink(q.FGM - q.FG3M, q.FGA - q.FG3A, LG.fg2, 150);
+    t.ft[i] = shrink(q.FTM, q.FTA, LG.ft, 80);
+    t.astW[i] = q.AST / mn; t.orebW[i] = q.OREB / mn; t.drebW[i] = q.DREB / mn; t.stlW[i] = q.STL / mn; t.blkW[i] = q.BLK / mn;
+  });
+  t.base = {}; ROLE.forEach(k => t.base[k] = t[k].slice());
+  setMinutes(t);
+  return t;
+}
+function setMinutes(t) {
+  const n = t.n, pi = new Float64Array(K); let s = 0;
+  for (let i = 0; i < n; i++) s += t.mpg[i];
+  for (let i = 0; i < n; i++) pi[i] = t.mpg[i] / s * 5;
+  for (let it = 0; it < 20; it++) { let s2 = 0; for (let i = 0; i < n; i++) { pi[i] = clamp(pi[i], .02, .92); s2 += pi[i]; } for (let i = 0; i < n; i++) pi[i] *= 5 / s2; }
+  t.pi = pi; t.logw = new Float64Array(K).fill(-Infinity);
+  for (let i = 0; i < n; i++) t.logw[i] = Math.log(pi[i] / (1 - Math.min(pi[i], .95)));
+  refreshG(t);
+}
+function refreshG(t) { t.glogw = t.logw.map(v => isFinite(v) ? -v : -Infinity); }
+const _sc = new Float64Array(K);
+function sampleLineup(rand, logw, noise, out, off) {
+  for (let i = 0; i < K; i++) _sc[i] = logw[i] === -Infinity ? -Infinity : logw[i] + noise[i] - Math.log(-Math.log(rand() || 1e-12));
+  let used = 0;
+  for (let j = 0; j < 5; j++) { let b = -1, bv = -Infinity; for (let i = 0; i < K; i++) if (!(used >> i & 1) && _sc[i] > bv) { bv = _sc[i]; b = i; } out[off + j] = b; used |= 1 << b; }
+}
+function calibrateMinutes(t, rand, minSd) {
+  const n = 1500, segs = 12, out = new Int8Array(5), noise = new Float64Array(K);
+  for (let it = 0; it < 8; it++) {
+    const cnt = new Float64Array(K);
+    for (let g = 0; g < n; g++) { for (let i = 0; i < K; i++) noise[i] = minSd * randn(rand); for (let s = 0; s < segs; s++) { sampleLineup(rand, t.logw, noise, out, 0); for (let j = 0; j < 5; j++) cnt[out[j]]++; } }
+    for (let i = 0; i < t.n; i++) t.logw[i] += .9 * Math.log(t.pi[i] / Math.max(cnt[i] / (n * segs), 1e-4));
+  }
+  refreshG(t);
+}
+const sumW = (t, w) => { let s = 0; for (let i = 0; i < t.n; i++) s += w[i] * t.mpg[i]; return s; };
+function fgmExp(t) { let s = 0; for (let i = 0; i < t.n; i++) s += t.use[i] * t.mpg[i] * (1 - t.pTo[i] - t.pFt[i]) * ((1 - t.p3[i]) * t.fg2[i] + t.p3[i] * t.fg3[i]); return s; }
+function tovExp(t) { let s = 0; for (let i = 0; i < t.n; i++) s += t.use[i] * t.mpg[i] * t.pTo[i]; return s; }
+function teamParams(T, el) {
+  return [0, 1].map(i => { const me = T[i], op = T[1 - i], o = sumW(me, me.orebW), od = sumW(op, op.drebW);
+    return { orb: clamp(o / (o + od), .15, .40), astFrac: clamp(sumW(me, me.astW) / Math.max(fgmExp(me), 1), .45, .75),
+      stlP: clamp(sumW(me, me.stlW) / Math.max(tovExp(op), 1), .40, .70), blkP: clamp(.075 * sumW(me, me.blkW) / 5, .03, .12),
+      defMult: Math.pow(op.defRtg / LG.rtg, el) }; });
+}
+function pick(rand, w, lo, ex) {
+  let s = 0; for (let j = 0; j < 5; j++) if (lo[j] !== ex) s += w[lo[j]] + 1e-9;
+  let r = rand() * s, last = lo[0];
+  for (let j = 0; j < 5; j++) { if (lo[j] === ex) continue; last = lo[j]; r -= w[lo[j]] + 1e-9; if (r <= 0) return lo[j]; }
+  return last;
+}
+function genLoc(r, is3) {
+  if (is3) {
+    if (r() < .2) return [(r() < .5 ? -1 : 1) * 22, 1 + r() * 12];
+    const a = clamp(.55 * randn(r), -1.18, 1.18), R = 23.9 + r() * 2.2;
+    return [R * Math.sin(a), 5.25 + R * Math.cos(a)];
+  }
+  const u = r();
+  if (u < .38) { const a = r() * 6.283, R = Math.abs(randn(r)) * 2 + .6; return [clamp(R * Math.sin(a), -9, 9), Math.max(1.5, 5.25 + R * Math.cos(a))]; }
+  if (u < .62) return [(r() * 2 - 1) * 7, 7 + r() * 11];
+  const a = (r() * 2 - 1) * 1.25, R = 9 + r() * 12; return [R * Math.sin(a), 5.25 + R * Math.cos(a)];
+}
+const ST = new Float32Array(2 * K * NS);
+
+/* one game. cap = {events:[]} to log play-by-play. rec = {cp, N, g} to store win-prob checkpoints. */
+function runGame(seed, T, prm, cfg, cap, rec) {
+  const rand = mulberry32(seed), lr = cap ? mulberry32(seed ^ 0x5bd1e995) : null;
+  const st = cap ? new Float32Array(2 * K * NS) : ST; st.fill(0);
+  const pts = [0, 0], ev = cap ? cap.events : null;
+  const P = Math.max(80, Math.round(cfg.pace + cfg.paceSd * randn(rand)));
+  const form = [clamp(1 + cfg.formSd * randn(rand), .85, 1.15), clamp(1 + cfg.formSd * randn(rand), .85, 1.15)];
+  const mult = [form[0] * prm[0].defMult, form[1] * prm[1].defMult * (1 + cfg.homeEdge)];
+  const noise = [new Float64Array(K), new Float64Array(K)];
+  for (let t = 0; t < 2; t++) for (let i = 0; i < K; i++) noise[t][i] = cfg.minSd * randn(rand);
+  const LU = new Int8Array(120), GL = new Int8Array(120).fill(-1), LUo = new Int8Array(10);
+  for (let t = 0; t < 2; t++) for (let s = 0; s < 12; s++) sampleLineup(rand, T[t].logw, noise[t], LU, t * 60 + s * 5);
+  const gl = (t, s) => { const o = t * 60 + s * 5; if (GL[o] < 0) sampleLineup(rand, T[t].glogw, noise[t], GL, o); return GL.subarray(o, o + 5); };
+
+  function period(Pp, segs, gm, L, base, otN, useBlow) {
+    let nj = 0;
+    for (let k = 0; k < Pp; k++) {
+      if (rec && !otN) while (nj < 24 && k >= Math.floor(nj * Pp / 24)) { rec.cp[nj * rec.N + rec.g] = pts[1] - pts[0]; nj++; }
+      const seg = Math.min((k * segs / Pp) | 0, segs - 1);
+      let blow = false;
+      if (useBlow) { const lead = Math.abs(pts[0] - pts[1]); blow = lead >= (seg >= 11 ? 15 : seg === 10 ? 20 : seg === 9 ? 25 : 1e9); }
+      const dt = gm / (2 * Pp);
+      for (let t = 0; t < 2; t++) {
+        const d = 1 - t, me = T[t], op = T[d];
+        const lo = blow ? gl(t, seg) : L.subarray(t * segs * 5 + seg * 5, t * segs * 5 + seg * 5 + 5);
+        const ld = blow ? gl(d, seg) : L.subarray(d * segs * 5 + seg * 5, d * segs * 5 + seg * 5 + 5);
+        for (let j = 0; j < 5; j++) { st[(t * K + lo[j]) * NS] += dt; st[(d * K + ld[j]) * NS] += dt; }
+        const eff = mult[t] * (1 - cfg.comeback * clamp(pts[t] - pts[d], -25, 25));
+        for (let ch = 0; ch < 6; ch++) {
+          const sh = pick(rand, me.use, lo, -1), u = rand(), o = (t * K + sh) * NS;
+          let e = null;
+          if (ev) { const el = base + (k + ch * .12) / Pp * gm; e = { t, sh, el, ot: otN, lo: Array.from(lo), ld: Array.from(ld), type: '' }; }
+          if (u < me.pTo[sh]) {
+            st[o + X.TOV]++;
+            let stl = -1; if (rand() < prm[d].stlP) { stl = pick(rand, op.stlW, ld, -1); st[(d * K + stl) * NS + X.STL]++; }
+            if (e) { e.type = 'TO'; e.stl = stl; }
+            if (e) { e.pts = pts.slice(); ev.push(e); }
+            break;
+          } else if (u < me.pTo[sh] + me.pFt[sh]) {
+            const nft = 2 + (rand() < .3 ? 1 : 0); let m = 0;
+            for (let i = 0; i < nft; i++) { st[o + X.FTA]++; if (rand() < me.ft[sh]) { st[o + X.FTM]++; st[o + X.PTS]++; pts[t]++; m++; } }
+            if (e) { e.type = 'FT'; e.nft = nft; e.ftm = m; e.pts = pts.slice(); ev.push(e); }
+            break;
+          } else {
+            const is3 = rand() < me.p3[sh], base0 = is3 ? me.fg3[sh] : me.fg2[sh];
+            const made = rand() < clamp(base0 * eff, .02, .95);
+            st[o + X.FGA]++; if (is3) st[o + X.FG3A]++;
+            if (e) { e.type = 'FG'; e.is3 = is3; e.made = made; e.loc = genLoc(lr, is3); e.ast = -1; e.blk = -1; e.reb = null; }
+            if (made) {
+              const pv = is3 ? 3 : 2; st[o + X.FGM]++; st[o + X.PTS] += pv; pts[t] += pv; if (is3) st[o + X.FG3M]++;
+              if (rand() < prm[t].astFrac) { const a = pick(rand, me.astW, lo, sh); st[(t * K + a) * NS + X.AST]++; if (e) e.ast = a; }
+              if (e) { e.pts = pts.slice(); ev.push(e); }
+              break;
+            }
+            if (rand() < prm[d].blkP) { const b = pick(rand, op.blkW, ld, -1); st[(d * K + b) * NS + X.BLK]++; if (e) e.blk = b; }
+            if (rand() < prm[t].orb) {
+              const r = pick(rand, me.orebW, lo, -1); st[(t * K + r) * NS + X.OREB]++;
+              if (e) { e.reb = [t, r, true]; e.pts = pts.slice(); ev.push(e); }
+              continue;
+            }
+            const r = pick(rand, op.drebW, ld, -1); st[(d * K + r) * NS + X.DREB]++;
+            if (e) { e.reb = [d, r, false]; e.pts = pts.slice(); ev.push(e); }
+            break;
+          }
+        }
+      }
+    }
+  }
+  period(P, 12, 48, LU, 0, 0, true);
+  let ot = 0;
+  while (pts[0] === pts[1] && ot < 6) {
+    ot++;
+    for (let t = 0; t < 2; t++) sampleLineup(rand, T[t].logw, noise[t], LUo, t * 5);
+    period(Math.max(6, Math.round(cfg.pace * 5 / 48 + randn(rand))), 1, 5, LUo, 48 + 5 * (ot - 1), ot, false);
+  }
+  if (rec) rec.cp[24 * rec.N + rec.g] = pts[1] - pts[0];
+  return { pts, ot, P, st };
+}
+
+function newAgg(N, full) {
+  const a = { N, sums: [new Float64Array(K * NS), new Float64Array(K * NS)], hp: new Int16Array(N), ap: new Int16Array(N), ot: new Uint8Array(N) };
+  if (full) { a.cp = new Int16Array(25 * N); a.pr = [new Int16Array(N * K * 4), new Int16Array(N * K * 4)]; }
+  return a;
+}
+function runBatch(T, prm, cfg, seed0, start, count, agg) {
+  for (let g = start; g < start + count; g++) {
+    const res = runGame(seed0 + g * 7919, T, prm, cfg, null, agg.cp ? { cp: agg.cp, N: agg.N, g } : null), st = res.st;
+    for (let t = 0; t < 2; t++) {
+      const s = agg.sums[t];
+      for (let i = 0; i < K * NS; i++) s[i] += st[t * K * NS + i];
+      if (agg.pr) for (let k = 0; k < K; k++) { const b = t * K * NS + k * NS, q = (g * K + k) * 4;
+        agg.pr[t][q] = st[b + X.PTS]; agg.pr[t][q + 1] = st[b + X.OREB] + st[b + X.DREB]; agg.pr[t][q + 2] = st[b + X.AST]; agg.pr[t][q + 3] = st[b + X.FG3M]; }
+    }
+    agg.ap[g] = res.pts[0]; agg.hp[g] = res.pts[1]; agg.ot[g] = res.ot;
+  }
+}
+const tick = () => new Promise(r => setTimeout(r, 0));
+async function prepare(T, cfg, onProg) {
+  const rand = mulberry32(cfg.seed);
+  T.forEach(t => { ROLE.forEach(k => t[k] = t.base[k].slice()); setMinutes(t); calibrateMinutes(t, rand, cfg.minSd); });
+  const prm = teamParams(T, cfg.defEl);
+  for (let it = 0; it < 4; it++) {
+    T.forEach(refreshG);
+    const n = 1500, agg = newAgg(n, false);
+    for (let s = 0; s < n; s += 300) { runBatch(T, prm, cfg, 9000000 + it * 100000, s, 300, agg); onProg && onProg((it + s / n) / 4 * .35); await tick(); }
+    for (let ti = 0; ti < 2; ti++) {
+      const t = T[ti], S = agg.sums[ti];
+      const mean = (k, s) => S[k * NS + s] / n;
+      for (let i = 0; i < t.n; i++) t.logw[i] += .8 * Math.log(t.pi[i] * 48 / Math.max(mean(i, X.MIN), .05));
+      const fits = { use: k => mean(k, X.FGA) + .44 * mean(k, X.FTA) + mean(k, X.TOV), astW: k => mean(k, X.AST), orebW: k => mean(k, X.OREB), drebW: k => mean(k, X.DREB), stlW: k => mean(k, X.STL), blkW: k => mean(k, X.BLK) };
+      for (const name of ROLE) {
+        const w = t[name]; let ts = 0, as = 0; const tg = [], ac = [];
+        for (let i = 0; i < t.n; i++) { tg[i] = t.base[name][i] * t.mpg[i]; ac[i] = fits[name](i); ts += tg[i]; as += ac[i]; }
+        for (let i = 0; i < t.n; i++) w[i] *= Math.pow(clamp((tg[i] / ts) / Math.max(ac[i] / Math.max(as, 1e-9), 1e-4), .5, 2), .7);
+      }
+    }
+  }
+  T.forEach(refreshG);
+  return prm;
+}
+async function simulate(T, cfg, N, onProg) {
+  const prm = await prepare(T, cfg, onProg), agg = newAgg(N, true);
+  for (let s = 0; s < N; s += 250) { runBatch(T, prm, cfg, cfg.seed * 1000, s, Math.min(250, N - s), agg); onProg && onProg(.35 + .65 * Math.min(1, (s + 250) / N)); await tick(); }
+  return { T, prm, agg, cfg, N };
+}
+function pickTypical(R) {
+  const { agg, N } = R, m = new Float64Array(N), tot = new Float64Array(N);
+  for (let g = 0; g < N; g++) { m[g] = agg.hp[g] - agg.ap[g]; tot[g] = agg.hp[g] + agg.ap[g]; }
+  const med = a => { const b = Float64Array.from(a).sort(); return b[b.length >> 1]; };
+  const sd = a => { let s = 0, q = 0; for (const v of a) { s += v; q += v * v; } const mu = s / a.length; return Math.sqrt(Math.max(q / a.length - mu * mu, 1e-9)); };
+  const mm = med(m), mt = med(tot), sm = sd(m), st = sd(tot);
+  let best = 0, bd = 1e18;
+  for (let g = 0; g < N; g++) { const d = ((m[g] - mm) / sm) ** 2 + ((tot[g] - mt) / st) ** 2 + (agg.ot[g] ? 4 : 0); if (d < bd) { bd = d; best = g; } }
+  return { g: best, medMargin: mm, medTotal: mt, sdMargin: sm, sdTotal: st };
+}
+
+/* ====================================================================
+   PAGE
+   ==================================================================== */
+const $ = id => document.getElementById(id);
+const CFG = { seed: 2101, pace: 99, paceSd: 4, formSd: .015, minSd: .18, homeEdge: .01, comeback: .0025, defEl: 1.0 };
+const S = { league: null, src: 'demo', away: null, home: null, out: new Set(), R: null, typ: null, events: [], idx: 0, playing: false, speed: 1, timer: null, projTeam: 0, running: false };
+
+const SUFFIX = /^(jr\.?|sr\.?|ii|iii|iv|v)$/i;
+function lastName(n) { const p = n.split(' ').filter(x => !SUFFIX.test(x)); return p[p.length - 1] || n; }
+function nick(name) { if (/trail blazers/i.test(name)) return 'Trail Blazers'; const p = name.split(' '); return p.length > 1 ? p[p.length - 1] : name; }
+const fmt = n => n.toLocaleString('en-US');
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function fitCanvas(cv, cssW, cssH) { const r = Math.min(window.devicePixelRatio || 1, 2); cv.width = Math.round(cssW * r); cv.height = Math.round(cssH * r); const c = cv.getContext('2d'); c.setTransform(r, 0, 0, r, 0, 0); return c; }
+
+function setLeague(lg, src) {
+  S.league = lg; S.src = src; S.out = new Set();
+  const abbrs = Object.keys(lg.players).filter(a => lg.players[a].length >= 6).sort((a, b) => (lg.teams[a]?.name || a).localeCompare(lg.teams[b]?.name || b));
+  for (const sel of [$('selAway'), $('selHome')]) sel.innerHTML = abbrs.map(a => `<option value="${a}">${(lg.teams[a]?.name || a)}</option>`).join('');
+  $('selAway').value = abbrs[0]; $('selHome').value = abbrs[1] || abbrs[0];
+  S.away = abbrs[0]; S.home = abbrs[1] || abbrs[0];
+  $('srcnote').textContent = src === 'demo'
+    ? 'Showing two invented demo teams. To use real NBA rosters, run fetch_data.py from the simulator download and load the league.json it creates.'
+    : `Real NBA data${lg.updated ? ' · updated ' + new Date(lg.updated).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''} · ${lg.season || 'this season'} blended with ${lg.prior || 'last season'}.` + (lg.updated && Date.now() - new Date(lg.updated) > 36 * 36e5 ? ' The data is ' + Math.round((Date.now() - new Date(lg.updated)) / 864e5) + ' days old; refresh it on your computer.' : '');
+  drawChips(); headline();
+}
+function headline() {
+  const lg = S.league, a = lg.teams[S.away]?.name || S.away, h = lg.teams[S.home]?.name || S.home;
+  $('headline').innerHTML = `We simulated tonight's <em>${nick(a)} @ ${nick(h)} 10,000 times.</em>`;
+}
+function rosterOf(ab) { return (S.league.players[ab] || []).slice().sort((x, y) => y.mpg - x.mpg); }
+function drawChips() {
+  const wrap = $('chips'); wrap.innerHTML = '';
+  [S.away, S.home].forEach((ab, ti) => rosterOf(ab).slice(0, 12).forEach(p => {
+    const key = ab + '|' + p.name, b = document.createElement('button');
+    b.className = 'chip'; b.textContent = lastName(p.name); b.setAttribute('aria-pressed', S.out.has(key));
+    b.style.borderColor = S.out.has(key) ? '' : (ti ? 'var(--home)' : 'var(--away)');
+    b.title = p.name + ' (' + ab + ')';
+    b.onclick = () => { S.out.has(key) ? S.out.delete(key) : S.out.add(key); drawChips(); };
+    wrap.appendChild(b);
+  }));
+}
+
+/* ---------- scatter ---------- */
+function drawScatter(frac) {
+  const cv = $('cvScatter'), W = cv.parentElement.clientWidth - 24, H = W;
+  const c = fitCanvas(cv, W, H), R = S.R;
+  c.clearRect(0, 0, W, H);
+  const pad = { l: 38, r: 10, t: 12, b: 34 }, pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+  let lo = 80, hi = 150;
+  if (R) { let mn = 999, mx = 0; for (let g = 0; g < R.N; g++) { mn = Math.min(mn, R.agg.hp[g], R.agg.ap[g]); mx = Math.max(mx, R.agg.hp[g], R.agg.ap[g]); } lo = Math.floor((mn - 2) / 10) * 10; hi = Math.ceil((mx + 2) / 10) * 10; }
+  const X_ = v => pad.l + (v - lo) / (hi - lo) * pw, Y_ = v => pad.t + ph - (v - lo) / (hi - lo) * ph;
+  c.strokeStyle = css('--grid'); c.lineWidth = 1; c.fillStyle = css('--muted'); c.font = '10px ' + css('--font-mono'); c.textAlign = 'right';
+  const step = (hi - lo) > 70 ? 20 : 10;
+  for (let v = lo; v <= hi; v += step) { c.beginPath(); c.moveTo(X_(v), pad.t); c.lineTo(X_(v), pad.t + ph); c.moveTo(pad.l, Y_(v)); c.lineTo(pad.l + pw, Y_(v)); c.stroke(); c.textAlign = 'right'; c.fillText(v, pad.l - 5, Y_(v) + 3); c.textAlign = 'center'; c.fillText(v, X_(v), pad.t + ph + 14); }
+  c.setLineDash([4, 4]); c.strokeStyle = css('--muted'); c.beginPath(); c.moveTo(X_(lo), Y_(lo)); c.lineTo(X_(hi), Y_(hi)); c.stroke(); c.setLineDash([]);
+  const an = S.R ? S.R.T[0].abbr : 'AWAY', hn = S.R ? S.R.T[1].abbr : 'HOME';
+  c.fillStyle = css('--away'); c.textAlign = 'left'; c.fillText(an + ' WIN ↖', pad.l + 6, pad.t + 12);
+  c.fillStyle = css('--home'); c.textAlign = 'right'; c.fillText('↘ ' + hn + ' WIN', pad.l + pw - 6, pad.t + ph - 8);
+  c.fillStyle = css('--ink2'); c.textAlign = 'center'; c.fillText(hn + ' points →', pad.l + pw / 2, H - 6);
+  c.save(); c.translate(10, pad.t + ph / 2); c.rotate(-Math.PI / 2); c.fillText(an + ' points →', 0, 0); c.restore();
+  if (!R) return;
+  const n = Math.floor(R.N * frac), ga = css('--away'), gh = css('--home');
+  c.globalAlpha = .55;
+  for (let g = 0; g < n; g++) { const hp = R.agg.hp[g], ap = R.agg.ap[g]; c.fillStyle = hp > ap ? gh : ga; c.fillRect(X_(hp) - 1.1 + (g % 3 - 1) * .0, Y_(ap) - 1.1, 2.2, 2.2); }
+  c.globalAlpha = 1;
+  $('runCount').textContent = fmt(n);
+}
+function updateWinCounts() {
+  const R = S.R; let hw = 0;
+  for (let g = 0; g < R.N; g++) if (R.agg.hp[g] > R.agg.ap[g]) hw++;
+  S.homeWins = hw;
+  $('winCounts').innerHTML = `<span class="away">${R.T[0].abbr} ${fmt(R.N - hw)}</span> · <span class="home">${R.T[1].abbr} ${fmt(hw)}</span>`;
+}
+function animateScatter() {
+  const t0 = performance.now(), dur = matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 1300;
+  (function f(now) { const p = Math.min(1, (now - t0) / dur); drawScatter(p); if (p < 1) requestAnimationFrame(f); })(t0);
+}
+
+/* ---------- court ---------- */
+const CW = 50, CH = 47, BASKET = [0, 5.25];
+function courtGeom(cv, w) { const m = 6, s = (w - 2 * m) / CW, h = CH * s + 2 * m; return { m, s, w, h, px: x => m + (x + 25) * s, py: y => m + y * s }; }
+function arcPts(cx, cy, r, a0, a1, n = 48) { const o = []; for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; o.push([cx + r * Math.sin(a), cy + r * Math.cos(a)]); } return o; }
+function drawCourt(c, G) {
+  c.clearRect(0, 0, G.w, G.h); c.strokeStyle = css('--line'); c.lineWidth = 1.2; c.fillStyle = 'transparent';
+  const line = pts => { c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(G.px(x), G.py(y)) : c.moveTo(G.px(x), G.py(y))); c.stroke(); };
+  line([[-25, 0], [25, 0], [25, 47], [-25, 47], [-25, 0]]);
+  line([[-8, 0], [-8, 19], [8, 19], [8, 0]]); line([[-6, 0], [-6, 19]]); line([[6, 0], [6, 19]]);
+  line(arcPts(0, 19, 6, 0, 6.2832)); line(arcPts(0, 5.25, 4, -1.5708, 1.5708));
+  line([[-22, 0], [-22, 14.2]]); line([[22, 0], [22, 14.2]]);
+  const a = Math.asin(22 / 23.75); line(arcPts(0, 5.25, 23.75, -a, a, 64));
+  line([[-3, 4], [3, 4]]); line(arcPts(0, 5.25, .75, 0, 6.2832, 16));
+  line(arcPts(0, 47, 6, 1.5708, 4.7124));
+}
+function drawShotCourt(cv, team, ti, label) {
+  const W = cv.parentElement.clientWidth, G = courtGeom(cv, W), c = fitCanvas(cv, W, G.h);
+  drawCourt(c, G);
+  // top scorer by expected points
+  let bi = 0, bv = -1; for (let i = 0; i < team.n; i++) { const v = team.use[i] * team.mpg[i]; if (v > bv) { bv = v; bi = i; } }
+  const p = team.players[bi], fga = p.tot.FGA / p.tot.GP;
+  const n = Math.min(600, Math.round(fga * 30)), r = mulberry32(77 + bi * 13 + ti), col = css(ti ? '--home' : '--away');
+  const dots = []; const pf = team.use[bi] > 0 ? 1 - team.pTo[bi] - team.pFt[bi] : 1;
+  for (let i = 0; i < n; i++) { const is3 = r() < team.p3[bi], loc = genLoc(r, is3); dots.push([loc[0], loc[1], r() < (is3 ? team.fg3[bi] : team.fg2[bi])]); }
+  const t0 = performance.now(), dur = matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 900;
+  (function f(now) {
+    const q = Math.min(1, (now - t0) / dur), k = Math.floor(dots.length * q);
+    drawCourt(c, G);
+    for (let i = 0; i < k; i++) { const d = dots[i], x = G.px(d[0]), y = G.py(d[1]); c.beginPath(); c.arc(x, y, d[2] ? 2.6 : 2.3, 0, 6.2832); if (d[2]) { c.fillStyle = col; c.globalAlpha = .85; c.fill(); } else { c.strokeStyle = col; c.globalAlpha = .55; c.lineWidth = 1; c.stroke(); } }
+    c.globalAlpha = 1; if (q < 1) requestAnimationFrame(f);
+  })(t0);
+  const fg = dots.length ? dots.filter(d => d[2]).length / dots.length : 0;
+  label.innerHTML = `<b style="color:${col}">${p.name.toUpperCase()}</b>every dot: a simulated shot · ${fmt(n)}<br>● made ○ missed · ${(fga).toFixed(1)} FGA/g`;
+}
+
+/* ---------- win probability from the 10,000 runs ---------- */
+const wpCache = new Map();
+function winProb(elapsedMin, margin) {
+  const R = S.R, j = clamp(Math.round(elapsedMin / 48 * 24), 0, 24), m = clamp(Math.round(margin), -60, 60), key = j * 200 + m + 100;
+  if (wpCache.has(key)) return wpCache.get(key);
+  let p;
+  if (j >= 24) p = margin > 0 ? 1 : margin < 0 ? 0 : .5;
+  else {
+    const N = R.N, cp = R.agg.cp, base = j * N; let w = 1, hw = 0, tot = 0;
+    for (; w <= 14; w += 1.5) { hw = 0; tot = 0; for (let g = 0; g < N; g++) { if (Math.abs(cp[base + g] - m) <= w) { tot++; if (R.agg.hp[g] > R.agg.ap[g]) hw++; } } if (tot >= 200) break; }
+    p = tot ? hw / tot : (m > 0 ? 1 : m < 0 ? 0 : .5);
+  }
+  wpCache.set(key, p); return p;
+}
+
+/* ---------- replay ---------- */
+const POS = [[], []]; let TGT = [[], []], CUR = [[], []];
+const OFF = [[0, 29], [16, 22], [-16, 22], [21, 8], [7, 11]];
+const clockStr = el => { if (el >= 48) { const o = el - 48, n = Math.floor(o / 5); const rem = 5 - (o - n * 5); return ['OT' + (n > 0 ? n + 1 : ''), fmtT(rem)]; } const q = Math.min(3, Math.floor(el / 12)); return ['Q' + (q + 1), fmtT(12 - (el - q * 12))]; };
+const fmtT = m => { const s = Math.max(0, Math.round(m * 60)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+function buildEvents(typ) {
+  const cap = { events: [] }, R = S.R;
+  const res = runGame(R.cfg.seed * 1000 + typ.g * 7919, R.T, R.prm, R.cfg, cap, null);
+  const ev = cap.events, out = []; let lastQ = -1;
+  ev.forEach(e => {
+    const qn = e.ot ? 10 + e.ot : Math.min(3, Math.floor(e.el / 12));
+    if (qn !== lastQ) { if (lastQ !== -1 || true) out.push({ type: 'Q', q: qn, el: e.el, pts: out.length ? out[out.length - 1].pts : [0, 0], lo: e.lo, ld: e.ld, t: e.t }); lastQ = qn; }
+    out.push(e);
+  });
+  S.final = res;
+  return out;
+}
+function nm(t, i) { return lastName(S.R.T[t].players[i].name); }
+function describe(e) {
+  const T = S.R.T;
+  if (e.type === 'Q') { const n = e.q >= 10 ? 'OVERTIME' + (e.q > 11 ? ' ' + (e.q - 9) : '') : ['1ST', '2ND', '3RD', '4TH'][e.q] + ' QUARTER'; return `<b>▶▶ ${n}</b>`; }
+  if (e.type === 'END') return `<b>FINAL</b> <span class="dim">· ${T[0].abbr} ${e.pts[0]}, ${T[1].abbr} ${e.pts[1]}</span>`;
+  const who = nm(e.t, e.sh);
+  if (e.type === 'TO') return `${who} turnover` + (e.stl >= 0 ? ` <span class="dim">· ${nm(1 - e.t, e.stl)} steal</span>` : '');
+  if (e.type === 'FT') return `${who} ${e.ftm}/${e.nft} free throws`;
+  const d = Math.round(Math.hypot(e.loc[0], e.loc[1] - 5.25)), kind = e.is3 ? 'three' : d <= 4 ? 'layup' : 'jumper';
+  if (e.made) return `${who} ${d}-ft ${kind}` + (e.ast >= 0 ? ` <span class="dim">· ${nm(e.t, e.ast)} assist</span>` : '');
+  return `${who} misses ${d}-ft ${kind}` + (e.blk >= 0 ? ` <span class="dim">· blocked by ${nm(1 - e.t, e.blk)}</span>` : '') + (e.reb ? ` <span class="dim">· ${nm(e.reb[0], e.reb[1])} rebound</span>` : '');
+}
+function setTargets(e, idx) {
+  if (!e || !e.lo) return;
+  const t = e.t, d = 1 - t, rot = idx % 5;
+  TGT = [[], []];
+  e.lo.forEach((k, j) => { const s = OFF[(j + rot) % 5]; TGT[t][k] = [s[0], s[1]]; });
+  e.ld.forEach((k, j) => { const s = OFF[(j + rot) % 5], px = s[0] * .78, py = BASKET[1] + (s[1] - BASKET[1]) * .72; TGT[d][k] = [px + (j % 2 ? 1.6 : -1.6), py + 1.2]; });
+  if (e.type === 'FG') TGT[t][e.sh] = [e.loc[0], e.loc[1]];
+  if (e.type === 'FT') TGT[t][e.sh] = [0, 19];
+  for (let q = 0; q < 2; q++) for (const k in TGT[q]) if (!CUR[q][k]) CUR[q][k] = TGT[q][k].slice();
+}
+let courtG = null, rcx = null;
+function drawReplay() {
+  const cv = $('cvReplay'), W = cv.parentElement.clientWidth - 24;
+  if (!courtG || courtG.w !== W || !rcx) { courtG = courtGeom(cv, W); rcx = fitCanvas(cv, W, courtG.h); }
+  const c = rcx, G = courtG; drawCourt(c, G);
+  const e = S.events[S.idx]; if (!e) return;
+  for (let t = 0; t < 2; t++) for (const k in TGT[t]) { const cu = CUR[t][k], tg = TGT[t][k]; cu[0] += (tg[0] - cu[0]) * .2; cu[1] += (tg[1] - cu[1]) * .2; }
+  const col = [css('--away'), css('--home')];
+  if (e.type === 'FG') { const x = G.px(e.loc[0]), y = G.py(e.loc[1]); c.lineWidth = 2; c.strokeStyle = e.made ? css('--hi') : css('--muted'); if (e.made) { c.beginPath(); c.arc(x, y, 11, 0, 6.2832); c.stroke(); } else { c.beginPath(); c.moveTo(x - 6, y - 6); c.lineTo(x + 6, y + 6); c.moveTo(x + 6, y - 6); c.lineTo(x - 6, y + 6); c.stroke(); } }
+  for (let t = 0; t < 2; t++) {
+    const onC = t === e.t ? e.lo : e.ld;
+    for (const k of onC) { const cu = CUR[t][k]; if (!cu) continue; const x = G.px(cu[0]), y = G.py(cu[1]);
+      c.beginPath(); c.arc(x, y, 8.5, 0, 6.2832); c.fillStyle = col[t]; c.globalAlpha = t === e.t ? .95 : .6; c.fill(); c.globalAlpha = 1;
+      c.fillStyle = '#0a0c10'; c.font = '600 8px ' + css('--font-mono'); c.textAlign = 'center'; c.fillText(nm(t, k).slice(0, 2).toUpperCase(), x, y + 3); }
+  }
+}
+function renderState() {
+  const e = S.events[S.idx]; if (!e) return;
+  const T = S.R.T, p = e.pts || [0, 0], fin = e.type === 'END';
+  $('sAway').textContent = p[0]; $('sHome').textContent = p[1];
+  const [q, ck] = fin ? ['FINAL', ''] : clockStr(e.el);
+  $('bClock').innerHTML = fin ? 'FINAL' : `${q}<br>${ck}`;
+  const pr = fin ? (p[1] > p[0] ? 1 : 0) : e.el >= 48 ? 1 / (1 + Math.exp(-(p[1] - p[0]) * .35)) : winProb(e.el, p[1] - p[0]);
+  $('wpA').style.width = ((1 - pr) * 100).toFixed(1) + '%'; $('wpH').style.width = (pr * 100).toFixed(1) + '%';
+  $('wpAl').textContent = Math.round((1 - pr) * 100) + '%'; $('wpHl').textContent = Math.round(pr * 100) + '%';
+  $('caption').innerHTML = describe(e);
+  const pp = [new Array(K).fill(0), new Array(K).fill(0)];
+  for (let i = 0; i <= S.idx; i++) { const v = S.events[i]; if (v.type === 'FG' && v.made) pp[v.t][v.sh] += v.is3 ? 3 : 2; else if (v.type === 'FT') pp[v.t][v.sh] += v.ftm; }
+  [0, 1].forEach(t => { const arr = pp[t].map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]).slice(0, 3);
+    $(t ? 'ldH' : 'ldA').innerHTML = arr.map(([v, i]) => `<div><span class="${t ? 'home' : 'away'}">${nm(t, i)}</span><span>${v}</span></div>`).join(''); });
+  $('scrub').value = S.idx;
+  $('btnPlay').textContent = S.playing ? '❚❚ Pause' : (S.idx >= S.events.length - 1 ? '▶ Replay' : '▶ Play');
+}
+function gotoEvent(i, anim) {
+  S.idx = clamp(i, 0, S.events.length - 1);
+  setTargets(S.events[S.idx], S.idx);
+  if (!anim) for (let t = 0; t < 2; t++) for (const k in TGT[t]) CUR[t][k] = TGT[t][k].slice();
+  renderState();
+}
+function stopPlay() { S.playing = false; clearTimeout(S.timer); renderState(); }
+function stepPlay() {
+  if (!S.playing) return;
+  if (S.idx >= S.events.length - 1) { stopPlay(); return; }
+  gotoEvent(S.idx + 1, true);
+  const e = S.events[S.idx], base = e.type === 'Q' ? 700 : e.type === 'END' ? 0 : 330;
+  S.timer = setTimeout(stepPlay, base / S.speed);
+}
+(function loop() { if (S.R && $('cvReplay')) drawReplay(); requestAnimationFrame(loop); })();
+
+/* ---------- tables ---------- */
+function boxTable(ti, host) {
+  const T = S.R.T[ti], st = S.final.st, cls = ti ? 'home' : 'away';
+  const rows = []; let tot = new Float64Array(NS);
+  const idx = [...Array(T.n).keys()].sort((a, b) => st[(ti * K + b) * NS] - st[(ti * K + a) * NS]);
+  for (const k of idx) { const o = (ti * K + k) * NS; if (st[o] <= 0) continue; for (let s = 0; s < NS; s++) tot[s] += st[o + s];
+    rows.push(`<tr><td>${T.players[k].name}</td><td>${Math.round(st[o])}</td><td class="pts">${st[o + X.PTS]}</td><td>${st[o + X.OREB] + st[o + X.DREB]}</td><td>${st[o + X.AST]}</td><td>${st[o + X.FGM]}-${st[o + X.FGA]}</td><td>${st[o + X.FG3M]}-${st[o + X.FG3A]}</td></tr>`); }
+  host.innerHTML = `<table><thead><tr><th class="${cls}">${T.name}</th><th>MIN</th><th>PTS</th><th>REB</th><th>AST</th><th>FG</th><th>3PT</th></tr></thead><tbody>${rows.join('')}<tr class="total"><td>TEAM</td><td></td><td>${tot[X.PTS]}</td><td>${tot[X.OREB] + tot[X.DREB]}</td><td>${tot[X.AST]}</td><td>${tot[X.FGM]}-${tot[X.FGA]}</td><td>${tot[X.FG3M]}-${tot[X.FG3A]}</td></tr></tbody></table>`;
+}
+function pct(arr, p) { const b = Int16Array.from(arr).sort(); return b[Math.min(b.length - 1, Math.floor(p * b.length))]; }
+function projTable() {
+  const R = S.R, ti = S.projTeam, T = R.T[ti], N = R.N, sums = R.agg.sums[ti], pr = R.agg.pr[ti], rows = [];
+  for (let k = 0; k < T.n; k++) {
+    const m = s => sums[k * NS + s] / N, vals = new Int16Array(N); for (let g = 0; g < N; g++) vals[g] = pr[(g * K + k) * 4];
+    rows.push(`<tr><td>${T.players[k].name}</td><td>${m(X.MIN).toFixed(1)}</td><td class="pts">${m(X.PTS).toFixed(1)}</td><td>${pct(vals, .1)}–${pct(vals, .9)}</td><td>${(m(X.OREB) + m(X.DREB)).toFixed(1)}</td><td>${m(X.AST).toFixed(1)}</td><td>${m(X.FG3M).toFixed(1)}</td><td>${m(X.STL).toFixed(1)}</td><td>${m(X.BLK).toFixed(1)}</td><td>${m(X.TOV).toFixed(1)}</td></tr>`);
+  }
+  $('projTable').innerHTML = `<table><thead><tr><th class="${ti ? 'home' : 'away'}">${T.name}</th><th>MIN</th><th>PTS</th><th>P10–P90</th><th>REB</th><th>AST</th><th>3PM</th><th>STL</th><th>BLK</th><th>TOV</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+}
+function fillPropPlayers() {
+  const R = S.R, sel = $('propPlayer'); sel.innerHTML = '';
+  R.T.forEach((T, ti) => { for (let k = 0; k < T.n; k++) { const o = document.createElement('option'); o.value = ti + ':' + k; o.textContent = T.players[k].name + ' (' + T.abbr + ')'; sel.appendChild(o); } });
+  propUpdate(true);
+}
+function statVec(ti, k, key) {
+  const R = S.R, N = R.N, pr = R.agg.pr[ti], v = new Float32Array(N);
+  for (let g = 0; g < N; g++) { const q = (g * K + k) * 4, p = pr[q], r = pr[q + 1], a = pr[q + 2], t3 = pr[q + 3];
+    v[g] = key === 'pts' ? p : key === 'reb' ? r : key === 'ast' ? a : key === '3pm' ? t3 : key === 'pra' ? p + r + a : key === 'pr' ? p + r : key === 'pa' ? p + a : r + a; }
+  return v;
+}
+function propUpdate(resetLine) {
+  if (!S.R) return;
+  const [ti, k] = $('propPlayer').value.split(':').map(Number), key = $('propStat').value, v = statVec(ti, k, key);
+  let s = 0; for (const x of v) s += x; const mean = s / v.length;
+  if (resetLine) $('propLine').value = (Math.round(mean - .5) + .5).toFixed(1);
+  const line = parseFloat($('propLine').value); if (isNaN(line)) { $('propOut').textContent = ''; return; }
+  let over = 0, push = 0; for (const x of v) { if (x > line) over++; else if (x === line) push++; }
+  const n = v.length, srt = Float32Array.from(v).sort();
+  $('propOut').innerHTML = `<b>${S.R.T[ti].players[k].name}</b> · mean ${mean.toFixed(1)} · median ${srt[n >> 1]}<br>Over ${line}: <b>${(over / n * 100).toFixed(1)}%</b> · Under: <b>${((n - over - push) / n * 100).toFixed(1)}%</b>` + (push ? ` · Push ${(push / n * 100).toFixed(1)}%` : '');
+}
+
+/* ---------- run ---------- */
+async function run() {
+  if (S.running) return; S.running = true; stopPlay();
+  const btn = $('btnRun'); btn.disabled = true; const st = $('status');
+  try {
+    S.away = $('selAway').value; S.home = $('selHome').value;
+    if (S.away === S.home) throw new Error('Pick two different teams.');
+    headline();
+    const lg = S.league, mk = ab => rosterOf(ab).filter(p => !S.out.has(ab + '|' + p.name));
+    const T = [buildTeam(S.away, lg.teams[S.away] || {}, mk(S.away)), buildTeam(S.home, lg.teams[S.home] || {}, mk(S.home))];
+    CFG.pace = (T[0].pace + T[1].pace) / 2; wpCache.clear();
+    st.textContent = 'Calibrating rotations…';
+    const R = await simulate(T, CFG, 10000, p => { st.textContent = `Simulating… ${Math.round(p * 100)}%`; });
+    S.R = R; S.typ = pickTypical(R); S.events = buildEvents(S.typ);
+    const last = S.events[S.events.length - 1];
+    S.events.push({ type: 'END', pts: last.pts.slice(), el: 48, lo: last.lo, ld: last.ld, t: last.t });
+    // make the END state show the true final (including OT)
+    S.events[S.events.length - 1].pts = S.final.pts.slice();
+    $('scrub').max = S.events.length - 1;
+    updateWinCounts(); animateScatter();
+    drawShotCourt($('cvCourtA'), T[0], 0, $('capA')); drawShotCourt($('cvCourtH'), T[1], 1, $('capH'));
+    $('bAway').textContent = T[0].name; $('bHome').textContent = T[1].name;
+    gotoEvent(S.events.length - 1, false);
+    boxTable(0, $('boxA')); boxTable(1, $('boxH'));
+    const f = S.final.pts, mg = f[1] - f[0], win = mg > 0 ? 1 : 0;
+    $('typical').innerHTML = `<span class="${win ? 'home' : 'away'}">${nick(T[win].name)}</span> by ${Math.abs(mg)}` + (S.final.ot ? ' <span class="label">(overtime)</span>' : '');
+    const hw = S.homeWins, aw = R.N - hw;
+    $('wbA').style.width = (aw / R.N * 100) + '%'; $('wbH').style.width = (hw / R.N * 100) + '%'; $('wbA').textContent = fmt(aw); $('wbH').textContent = fmt(hw);
+    $('wlA').innerHTML = `<span class="away">${nick(T[0].name)} ${Math.round(aw / R.N * 100)}%</span>`; $('wlH').innerHTML = `<span class="home">${nick(T[1].name)} ${Math.round(hw / R.N * 100)}%</span>`;
+    const mm = S.typ.medMargin; $('medline').textContent = `median margin: ${mm === 0 ? 'even' : nick(T[mm > 0 ? 1 : 0].name) + ' by ' + Math.abs(mm)} · avg score ${T[0].abbr} ${(avg(R.agg.ap)).toFixed(1)}, ${T[1].abbr} ${(avg(R.agg.hp)).toFixed(1)}`;
+    $('projTabs').children[0].textContent = T[0].name; $('projTabs').children[1].textContent = T[1].name;
+    projTable(); fillPropPlayers();
+    $('foot').textContent = `Players: ${S.src === 'demo' ? 'invented demo players' : (S.league.season || '') + ' season stats blended with last season'}. 10,000 runs, seed ${CFG.seed}. Simulated, not a prediction.`;
+    st.textContent = `Done · ${fmt(R.N)} games simulated.`;
+  } catch (err) { st.textContent = err.message || String(err); console.error(err); }
+  finally { btn.disabled = false; S.running = false; }
+}
+const avg = a => { let s = 0; for (const v of a) s += v; return s / a.length; };
+
+/* ---------- wiring ---------- */
+$('btnRun').onclick = run;
+$('selAway').onchange = () => { S.away = $('selAway').value; S.out.clear(); drawChips(); headline(); };
+$('selHome').onchange = () => { S.home = $('selHome').value; S.out.clear(); drawChips(); headline(); };
+$('btnPlay').onclick = () => {
+  if (!S.R) return;
+  if (S.playing) { stopPlay(); return; }
+  if (S.idx >= S.events.length - 1) gotoEvent(0, false);
+  S.playing = true; renderState(); stepPlay();
+};
+document.querySelectorAll('.seg [data-sp]').forEach(b => b.onclick = () => { S.speed = +b.dataset.sp; document.querySelectorAll('.seg [data-sp]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+$('scrub').oninput = e => { if (!S.R) return; if (S.playing) stopPlay(); gotoEvent(+e.target.value, false); };
+document.querySelectorAll('#projTabs button').forEach(b => b.onclick = () => { S.projTeam = +b.dataset.t; document.querySelectorAll('#projTabs button').forEach(x => x.setAttribute('aria-pressed', x === b)); if (S.R) projTable(); });
+$('propPlayer').onchange = () => propUpdate(true); $('propStat').onchange = () => propUpdate(true); $('propLine').oninput = () => propUpdate(false);
+$('btnCb').onclick = () => { const on = document.documentElement.dataset.cb !== '1'; if (on) document.documentElement.dataset.cb = '1'; else delete document.documentElement.dataset.cb; $('btnCb').setAttribute('aria-pressed', on); if (S.R) { drawScatter(1); drawShotCourt($('cvCourtA'), S.R.T[0], 0, $('capA')); drawShotCourt($('cvCourtH'), S.R.T[1], 1, $('capH')); } };
+$('fileLeague').onchange = e => {
+  const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
+  rd.onload = () => { try { const lg = JSON.parse(rd.result); if (!lg.players || !lg.teams) throw new Error('missing players or teams'); setLeague(lg, 'file'); S.sched = null; drawGames(); $('status').textContent = `Loaded ${Object.keys(lg.players).length} teams. Pick two and run.`; }
+    catch (err) { $('status').textContent = 'That file is not a league.json from fetch_data.py (' + err.message + ').'; } };
+  rd.readAsText(f);
+};
+window.addEventListener('resize', () => { if (S.R) { drawScatter(1); courtG = null; } });
+/* ---------- schedule + local auto-load (works when served by run_app.py on this computer) ---------- */
+const etDate = d => new Date(d).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+function dayLabel(d) {
+  const t = etDate(Date.now()), n = etDate(Date.now() + 864e5);
+  if (d === t) return 'Today'; if (d === n) return 'Tomorrow';
+  return new Date(d + 'T12:00:00').toLocaleDateString([], { weekday: 'short', month: 'numeric', day: 'numeric' });
+}
+function gameTime(g) {
+  if (g.status === 3) return `Final ${g.away_score}-${g.home_score}`;
+  if (g.status === 2) return `Live ${g.away_score}-${g.home_score}`;
+  return g.utc ? new Date(g.utc).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : (g.text || '');
+}
+function drawGames() {
+  const sc = S.sched, lg = S.league; S.firstGame = null;
+  if (!sc || !sc.games || !lg) { $('gamesWrap').hidden = true; return; }
+  const today = etDate(Date.now()), games = sc.games.filter(g => lg.players[g.away] && lg.players[g.home] && g.date >= today);
+  const days = [...new Set(games.map(g => g.date))].sort().slice(0, 10);
+  if (!days.length) { $('gamesWrap').hidden = true; return; }
+  if (!days.includes(S.day)) S.day = days[0];
+  $('gamesWrap').hidden = false;
+  $('dayTabs').innerHTML = ''; days.forEach(d => { const b = document.createElement('button'); b.textContent = dayLabel(d); b.setAttribute('aria-pressed', d === S.day); b.onclick = () => { S.day = d; drawGames(); }; $('dayTabs').appendChild(b); });
+  const list = games.filter(g => g.date === S.day); $('gameList').innerHTML = '';
+  S.firstGame = list.find(g => g.status !== 3) || list[0];
+  list.forEach(g => { const b = document.createElement('button'); b.className = 'game'; b.id = 'g_' + g.id;
+    b.setAttribute('aria-pressed', S.gameId === g.id);
+    b.innerHTML = `${g.away} @ ${g.home}<small>${gameTime(g)}</small>`; b.onclick = () => pickGame(g); $('gameList').appendChild(b); });
+}
+function pickGame(g) {
+  if (S.running) return;
+  S.gameId = g.id; $('selAway').value = g.away; $('selHome').value = g.home; S.away = g.away; S.home = g.home; S.out.clear();
+  drawChips(); headline(); drawGames(); run();
+}
+async function loadLocal() {
+  for (const base of ['data/', '../data/']) {   // hosted copy first, then the copy served from this computer
+    try {
+      const r = await fetch(base + 'league.json', { cache: 'no-store' }); if (!r.ok) continue;
+      const lg = await r.json(); if (!lg.players || !lg.teams) continue;
+      setLeague(lg, 'file');
+      try { const rs = await fetch(base + 'schedule.json', { cache: 'no-store' }); if (rs.ok) { S.sched = await rs.json(); drawGames(); } } catch (e) { /* schedule is optional */ }
+      return true;
+    } catch (e) { /* try the next location */ }
+  }
+  return false;
+}
+setLeague(DEMO_LEAGUE, 'demo');
+loadLocal().then(ok => { if (ok && S.firstGame) pickGame(S.firstGame); else run(); });
+</script>
