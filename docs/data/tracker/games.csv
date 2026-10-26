@@ -1,0 +1,2 @@
+Date,Game ID,Away,Home,Sim home win %,Sim pick,Sim pick win %,Sim away pts,Sim home pts,Sim margin (home-away),Sim total,Actual away pts,Actual home pts,Actual margin (home-away),Actual total,Actual winner,Pick correct,Margin error (actual-sim),Total error (actual-sim),Brier score,Status,Locked at (UTC)
+2026-10-25,0022600112,LAL,UTA,0.4508,LAL,0.5492,122.3,120.5,-1.8,242.8,132,123,-9,255,LAL,YES,-7.2,12.2,0.2032,Final,2026-10-25T18:05:04+00:00
